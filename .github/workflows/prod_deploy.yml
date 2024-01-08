@@ -7,8 +7,8 @@ on:
 
 jobs:
   build:
-    # pull 요청이 dev에 merge 되었을 때 아래 steps를 실행
-    if: github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'develop'
+    # pull 요청이 main에 merge 되었을 때 아래 steps를 실행
+    if: github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'main'
 
     runs-on: ubuntu-latest # 우분투 최신 버전으로 실행
 
