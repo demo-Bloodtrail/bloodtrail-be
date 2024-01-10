@@ -45,7 +45,7 @@ jobs:
 
       # 빌드
       - name: Run start:dev
-        run: npm start:dev
+        run: npm run start:dev
 
       # 현재 시간 얻기 (Build 시점의 시간 얻기)
       - name: Get current time
