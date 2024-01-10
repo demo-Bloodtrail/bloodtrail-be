@@ -4,10 +4,11 @@
   "description": "��#\u0000 \u0000b\u0000l\u0000o\u0000o\u0000d\u0000t\u0000r\u0000a\u0000i\u0000l\u0000-\u0000b\u0000e\u0000\r\u0000 \u0000",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "jest",
     "start:dev": "set NODE_ENV=dev && nodemon --exec babel-node index.js",
     "start:dist": "NODE_ENV=prod webpack --mode production & node ./dist/main.js",
     "start": "NODE_ENV=prod node main.js",
+    "build:dev": "NODE_ENV=dev webpack --mode production",
     "build": "NODE_ENV=prod webpack --mode production"
   },
   "author": "",
@@ -38,6 +39,8 @@
     "@babel/core": "^7.23.7",
     "@babel/node": "^7.22.19",
     "@babel/preset-env": "^7.23.7",
-    "nodemon": "^3.0.2"
+    "jest": "^29.7.0",
+    "nodemon": "^3.0.2",
+    "supertest": "^6.3.3"
   }
 }
