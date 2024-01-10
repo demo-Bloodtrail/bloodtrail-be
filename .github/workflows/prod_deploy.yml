@@ -40,6 +40,12 @@ jobs:
       - name: Run Build
         run: npm run build # 빌드
 
+      # .env.prod 파일 생성
+      - name: Create env file
+        run: |
+          touch .env
+          echo "${{ secrets.NODE_ENV_PROD }}" > .env.prod
+
       # 배포 패키지 생성
       - name: Generate deployment package
         run: |
