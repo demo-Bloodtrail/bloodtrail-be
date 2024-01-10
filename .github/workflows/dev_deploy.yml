@@ -44,8 +44,12 @@ jobs:
           echo "${{ secrets.NODE_ENV_DEV }}" > .env.dev
 
       # 빌드
-      - name: Run start:dev
-        run: npm run start:dev
+      - name: Run build:dev
+        run: npm run build:dev
+
+      # 테스트
+      - name: Run test
+        run: npm test
 
       # 현재 시간 얻기 (Build 시점의 시간 얻기)
       - name: Get current time
