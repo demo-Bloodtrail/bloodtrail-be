@@ -19,19 +19,19 @@ export const connect = () => {
       useNewUrlParser: true,
     })
     .then(() => {
-      console.log("몽고디비 연결 성공");
+      console.log("MongoDB connected!");
     })
     .catch((err) => {
-      console.error("몽고디비 연결 에러", err);
+      console.error("MongoDB connection error", err);
     });
 };
 
 mongoose.connection.on("error", (error) => {
-  console.error("몽고디비 연결 에러", error);
+  console.error("MongoDB connection error", error);
 });
 
 mongoose.connection.on("disconnected", () => {
-  console.error("몽고디비 연결이 끊겼습니다. 연결을 재시도합니다.");
+  console.error("MongoDB connection has been lost! Attempting to reconnect.");
   connect();
 });
 
