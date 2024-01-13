@@ -8,7 +8,7 @@ const ReportSchema = new Schema({
         required: true,
     },
     claim_info: {
-        type: (['POST', 'CHAT'], Schema.Types.ObjectId),
+        type: (['UNHEALTHY', 'FINANCE', 'FRAUD', 'ABUSE', 'ETC'], Schema.Types.ObjectId),
         required: true,
     },
     claimer: {
