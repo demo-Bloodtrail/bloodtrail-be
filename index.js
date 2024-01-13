@@ -4,26 +4,30 @@ import SwaggerUi from "swagger-ui-express";
 import dotenv from "dotenv";
 import cors from "cors";
 
-import { response } from "./config/response.js";
-import { BaseError } from "./config/error.js";
-import { status } from "./config/responseStatus.js";
+import { connect } from "./src/config/database.js";
+import { response } from "./src/config/response.js";
+import { BaseError } from "./src/config/error.js";
+import { status } from "./src/config/responseStatus.js";
 import { healthRouter } from "./src/router/healthRouter.js";
+import { authRouter } from "./src/router/authRouter.js";
 
 const envFile = process.env.NODE_ENV === "prod" ? ".env.prod" : ".env.dev";
 dotenv.config({ path: envFile }); // .env 파일 사용 (환경 변수 관리)
 
 const app = express();
+connect(); // mongodb 연결
 
-// server setting - veiw, static, body-parser etc..
+// server setting - view, static, body-parser etc..
 app.set("port", process.env.PORT || 3000); // 서버 포트 지정
 app.use(cors()); // cors 방식 허용
 app.use(express.static("public")); // 정적 파일 접근
 app.use(express.json()); // request의 본문을 json으로 해석할 수 있도록 함 (JSON 형태의 요청 body를 파싱하기 위함)
 app.use(express.urlencoded({ extended: false })); // 단순 객체 문자열 형태로 본문 데이터 해석
 
-app.use("/api-docs", SwaggerUi.serve, SwaggerUi.setup(specs));
-
-app.use("/health", healthRouter);
+// Router
+app.use("/api-docs", SwaggerUi.serve, SwaggerUi.setup(specs)); // swagger
+app.use("/health", healthRouter); // health check
+app.use("/auth", authRouter); // auth
 
 app.get("/", (req, res, next) => {
   res.send(response(status.SUCCESS, "루트 페이지!"));
