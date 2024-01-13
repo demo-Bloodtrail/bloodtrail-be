@@ -63,3 +63,16 @@ export const login = async (req, res, next) => {
     return new BaseError(status.INTERNAL_SERVER_ERROR);
   }
 };
+
+// 프로필 조회
+export const getUserInfo = async (req, res, next) => {
+  const { _id, email } = req.user;
+
+  try {
+    const user = await User.findOne({ email });
+    return res.send(response(status.SUCCESS, user));
+  } catch (error) {
+    console.error(error);
+    return new BaseError(status.INTERNAL_SERVER_ERROR);
+  }
+};
