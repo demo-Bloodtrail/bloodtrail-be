@@ -1,8 +1,7 @@
 import dotenv from "dotenv";
 import * as redis from "redis";
 
-const envFile = process.env.NODE_ENV === "prod" ? ".env.prod" : ".env.dev";
-dotenv.config({ path: envFile }); // .env 파일 사용 (환경 변수 관리)
+dotenv.config(); // .env 파일 사용 (환경 변수 관리)
 
 // redisClient 생성
 const redisClient = redis.createClient({

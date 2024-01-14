@@ -1,8 +1,7 @@
-import mongoose from "mongoose";
 import dotenv from "dotenv";
+import mongoose from "mongoose";
 
-const envFile = process.env.NODE_ENV === "prod" ? ".env.prod" : ".env.dev";
-dotenv.config({ path: envFile }); // .env 파일 사용 (환경 변수 관리)
+dotenv.config(); // .env 파일 사용 (환경 변수 관리)
 
 const MONGO_URI = process.env.MONGO_URI;
 const MONGO_DB_NAME = process.env.MONGO_DB_NAME;
