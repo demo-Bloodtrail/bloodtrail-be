@@ -58,6 +58,12 @@ const userSchema = new Schema(
       type: ObjectId,
       ref: "Crew",
     },
+    // 상태
+    status: {
+      type: String,
+      required: true,
+      default: "active",
+    },
     created_at: {
       type: Date,
       default: Date.now,
