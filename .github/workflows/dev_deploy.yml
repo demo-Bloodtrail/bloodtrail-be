@@ -33,13 +33,15 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
 
+      # .env 파일 생성
+      - name: Create env file
+        run: |
+          echo "${{ secrets.NODE_ENV_DEV }}" > .env
+          cat .env
+
       # dependencies 설치, test and build
       - name: Install dependencies
         run: npm ci # dependencies 설치 npm ci, npm install 모두 다 됨!
-
-      # .env 파일 생성
-      - name: Create env file
-        run: echo "${{ secrets.NODE_ENV_DEV }}" >> .env
 
       # 빌드
       - name: Run build:dev
