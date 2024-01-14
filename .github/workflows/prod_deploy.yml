@@ -44,7 +44,7 @@ jobs:
       - name: Create env file
         run: |
           touch .env
-          echo "${{ secrets.NODE_ENV_PROD }}" > .env
+          echo "${{ secrets.NODE_ENV_PROD }}" >> .env
 
       # 배포 패키지 생성
       - name: Generate deployment package
