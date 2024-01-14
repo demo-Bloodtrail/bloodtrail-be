@@ -59,7 +59,6 @@ jobs:
           cp package-lock.json dist/package-lock.json
           cp Procfile dist/Procfile
           cp -R .ebextensions dist/.ebextensions
-          cp .env dist/.env
           cd dist
           zip -r deploy.zip .
 
