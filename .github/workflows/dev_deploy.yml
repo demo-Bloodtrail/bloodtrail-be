@@ -33,19 +33,27 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
 
+      # .env 파일 생성
+      - name: Create env file
+        run: |
+          echo "${{ secrets.NODE_ENV_DEV }}" > .env
+          cat .env
+
       # dependencies 설치, test and build
       - name: Install dependencies
         run: npm ci # dependencies 설치 npm ci, npm install 모두 다 됨!
 
-      # .env 파일 생성
-      - name: Create env file
-        run: |
-          touch .env
-          echo "${{ secrets.NODE_ENV_DEV }}" > .env
-
       # 빌드
       - name: Run build:dev
         run: npm run build:dev
+        env:
+          NODE_ENV: ${{ secrets.DEV_NODE_ENV }}
+          PORT: ${{ secrets.PORT }}
+          MONGO_URI: ${{ secrets.MONGO_URI }}
+          MONGO_DB_NAME: ${{ secrets.DEV_MONGO_DB_NAME }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          REDIS_HOST: ${{ secrets.DEV_REDIS_HOST }}
+          REDIS_PORT: ${{ secrets.REDIS_PORT }}
 
       # 테스트
       - name: Run test
