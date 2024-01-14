@@ -43,8 +43,13 @@ jobs:
       # .env.prod 파일 생성
       - name: Create env file
         run: |
-          touch .env
-          echo "${{ secrets.NODE_ENV_PROD }}" >> .env
+          echo "NODE_ENV=${{ secrets.PROD_NODE_ENV }}" >> .env
+          echo "PORT=${{ secrets.PORT }}" >> .env
+          echo "MONGO_URI=${{ secrets.PROD_MONGO_URI }}" >> .env
+          echo "MONGO_DB_NAME=${{ secrets.PROD_MONGO_DB_NAME }}" >> .env
+          echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> .env
+          echo "REDIS_HOST=${{ secrets.PROD_REDIS_HOST }}" >> .env
+          echo "REDIS_PORT=${{ secrets.REDIS_PORT }}" >> .env
 
       # 배포 패키지 생성
       - name: Generate deployment package
