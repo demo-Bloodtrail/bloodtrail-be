@@ -1,68 +1,80 @@
 import mongoose from "mongoose";
+import jwt from "jsonwebtoken";
+import dotenv from "dotenv";
+
+const envFile = process.env.NODE_ENV === "prod" ? ".env.prod" : ".env.dev";
+dotenv.config({ path: envFile }); // .env 파일 사용 (환경 변수 관리)
+const secret = process.env.JWT_SECRET;
 
 const { Schema } = mongoose;
-const { Types: { ObjectId }, } = Schema;
+const {
+  Types: { ObjectId },
+} = Schema;
 
-const userSchema = new Schema({
+const userSchema = new Schema(
+  {
     email: {
-        type: String,
-        required: true,
-        unique: true,
-        index: true,
+      type: String,
+      required: true,
+      unique: true,
+      index: true,
     },
     name: {
-        type: String,
-        required: true,
+      type: String,
+      required: true,
     },
     phone: {
-        type: String,
-        required: true,
-        unique: true,
+      type: String,
+      required: true,
+      unique: true,
     },
     birth: {
-        type: Date,
-        required: true,
+      type: Date,
+      required: true,
     },
     profile_image: {
-        type: String,
+      type: String,
     },
-    user_id: {
-        type: String,
-        required: true,
-        unique: true,
-    },
-    pwd: {
-        type: String,
-        required: true,
+    password: {
+      type: String,
+      required: true,
     },
     // 포인트
     point: {
-        type: Number,
-        default: 0,
+      type: Number,
+      default: 0,
     },
     // 포인트에 대한 배지
     badge: {
-        type: String,
+      type: String,
     },
     // 프리미엄 결제 여부
     premium: {
-        type: Boolean,
-        required: true,
+      type: Boolean,
+      required: true,
     },
     // 소속 크루
     crew: {
-        type: ObjectId,
-        ref: 'Crew',
+      type: ObjectId,
+      ref: "Crew",
+    },
+    // 상태
+    status: {
+      type: String,
+      required: true,
+      default: "active",
     },
     created_at: {
-        type: Date,
-        default: Date.now,
+      type: Date,
+      default: Date.now,
     },
     updated_at: {
-        type: Date,
-        default: Date.now,
+      type: Date,
+      default: Date.now,
     },
-});
+  },
+  { versionKey: false } // 데이터 삽입 시 __v 칼럼 생성 X
+);
 
-const User = mongoose.model('User', userSchema);
+const User = mongoose.model("User", userSchema);
 export default User;
