@@ -46,6 +46,14 @@ jobs:
       # 빌드
       - name: Run build:dev
         run: npm run build:dev
+        env:
+          NODE_ENV: ${{ secrets.DEV_NODE_ENV }}
+          PORT: ${{ secrets.PORT }}
+          MONGO_URI: ${{ secrets.MONGO_URI }}
+          MONGO_DB_NAME: ${{ secrets.DEV_MONGO_DB_NAME }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          REDIS_HOST: ${{ secrets.DEV_REDIS_HOST }}
+          REDIS_PORT: ${{ secrets.REDIS_PORT }}
 
       # 테스트
       - name: Run test
