@@ -11,8 +11,7 @@ import { status } from "./src/config/responseStatus.js";
 import { healthRouter } from "./src/router/healthRouter.js";
 import { authRouter } from "./src/router/authRouter.js";
 
-const envFile = process.env.NODE_ENV === "prod" ? ".env.prod" : ".env.dev";
-dotenv.config({ path: envFile }); // .env 파일 사용 (환경 변수 관리)
+dotenv.config(); // .env 파일 사용 (환경 변수 관리)
 
 const app = express();
 connect(); // mongodb 연결
@@ -53,4 +52,5 @@ app.use((err, req, res, next) => {
 app.listen(app.get("port"), () => {
   console.log(`Example app listening on port ${app.get("port")}`);
   console.log(`Now env ` + process.env.NODE_ENV);
+  console.log(`Now REDIS_HOST ` + process.env.REDIS_HOST);
 });
