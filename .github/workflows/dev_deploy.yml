@@ -39,9 +39,7 @@ jobs:
 
       # .env 파일 생성
       - name: Create env file
-        run: |
-          touch .env
-          echo "${{ secrets.NODE_ENV_DEV }}" > .env
+        run: echo "${{ secrets.NODE_ENV_DEV }}" >> .env
 
       # 빌드
       - name: Run build:dev
