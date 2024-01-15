@@ -9,9 +9,9 @@ const app = express();
 app.use("/health", healthRouter);
 
 describe("Health Check API", () => {
-  it('should respond with "HELLO, I\'m Healthy!"', async () => {
+  it('should respond with "HELLO, I\'m Healthy! NODE_ENV = test"', async () => {
     const response = await request(app).get("/health");
     expect(response.status).toBe(200);
-    expect(response.text).toBe("HELLO, I'm Healthy!");
+    expect(response.text).toBe("HELLO, I'm Healthy! NODE_ENV = test");
   });
 });
