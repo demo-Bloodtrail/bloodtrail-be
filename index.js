@@ -51,4 +51,6 @@ app.use((err, req, res, next) => {
 
 app.listen(app.get("port"), () => {
   console.log(`Example app listening on port ${app.get("port")}`);
+  console.log(`Now env ` + process.env.NODE_ENV);
+  console.log(`Now REDIS_HOST ` + process.env.REDIS_HOST);
 });
