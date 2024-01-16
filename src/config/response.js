@@ -15,3 +15,15 @@ export const errResponse = ({ isSuccess, code, message, status }) => {
     status: status,
   };
 };
+
+export const customErrResponse = (
+  { isSuccess, code, message, status },
+  customMessage
+) => {
+  return {
+    isSuccess: isSuccess,
+    code: code,
+    message: customMessage,
+    status: status,
+  };
+};

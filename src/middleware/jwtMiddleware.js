@@ -2,7 +2,7 @@ import dotenv from "dotenv";
 import jwt from "jsonwebtoken";
 import redisClient from "../config/redis.js";
 import { status } from "../config/responseStatus.js";
-import { BaseError } from "../config/error.js";
+import { errResponse } from "../config/response.js";
 
 dotenv.config(); // .env 파일 사용 (환경 변수 관리)
 
@@ -19,7 +19,7 @@ export const generateAccessToken = (user) => {
   // secret으로 sign하여 발급하고 return
   return jwt.sign(payload, secret, {
     algorithm: "HS256", // 암호화 알고리즘
-    expiresIn: "1h", // 유효기간 = 1시간
+    expiresIn: "1s", // 유효기간 = 1시간
   });
 };
 
@@ -56,14 +56,17 @@ export const verifyRefreshToken = (token, userId) => {
   return new Promise((resolve, reject) => {
     redisClient.get(userId.toString(), (err, data) => {
       if (err) {
-        reject(new BaseError(status.UNAUTHORIZED));
+        console.log("레디스랑 연결해서 get했는데 err낫음");
+        reject(errResponse(status.UNAUTHORIZED));
       } else if (token === data) {
         // 리프레시 토큰과 Redis에 저장된 토큰의 일치 여부 검사
-        jwt.verify(token, secret);
-        resolve();
+        console.log("리프레시랑 레디스 토큰 일치 여부 검사");
+        const decoded = jwt.verify(token, secret);
+        console.log("일치함");
+        resolve(decoded.email);
       } else {
         console.log("Invalid Refresh Token");
-        reject(new BaseError(status.UNAUTHORIZED));
+        reject(errResponse(status.UNAUTHORIZED));
       }
     });
   });

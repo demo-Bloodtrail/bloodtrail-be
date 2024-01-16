@@ -1,32 +1,75 @@
 import bcrypt from "bcrypt";
 import { status } from "../config/responseStatus.js";
-import { BaseError } from "../config/error.js";
-import { response } from "../config/response.js";
+import {
+  response,
+  errResponse,
+  customErrResponse,
+} from "../config/response.js";
 import User from "../schema/user.js";
 import {
   generateAccessToken,
   generateRefreshToken,
 } from "../middleware/jwtMiddleware.js";
 
-// 회원가입 (유효성 검사 + 이미지 저장 + 이메일 인증 추가해야 함)
+/*
+ * API No. 1
+ * API Name : 회원가입 API
+ * [POST] /auth/register
+ * TO DO : S3 업로드 구현 후 이미지 업로드 로직 추가
+ */
 export const registUser = async (req, res, next) => {
-  console.log("회원가입을 요청하였습니다!");
-
   try {
-    const { email, name, phone, birth, password } = req.body;
+    const { email, name, nickname, phone, birth, password } = req.body;
 
-    const existUser = await User.findOne({ email });
-    if (existUser) {
-      // 중복된 이메일인지 검사
-      return new BaseError(status.EMAIL_ALREADY_EXIST);
+    // 1. 이메일 유효성 검사
+    if (validEmailCheck(email) == false) {
+      return res.send(
+        customErrResponse(
+          status.BAD_REQUEST,
+          "올바른 이메일 주소를 입력해주세요."
+        )
+      );
     }
 
-    // 비밀번호 암호화
+    // 2. 핸드폰 유효성 검사
+    if (validCallNumberCheck(phone) == false) {
+      return res.send(
+        customErrResponse(
+          status.BAD_REQUEST,
+          "올바른 핸드폰 번호를 입력해주세요."
+        )
+      );
+    }
+
+    // 3. 비밀번호 유효성 검사 (비밀번호는 숫자, 소문자, 대문자를 1개이상, 6~20자리 이내)
+    if (validPasswordCheck(password) == false) {
+      return res.send(
+        customErrResponse(
+          status.BAD_REQUEST,
+          "올바른 비밀번호 형식을 지켜주세요."
+        )
+      );
+    }
+
+    // 4. 중복된 이메일인지 검사
+    const existUser = await User.findOne({ email });
+    if (existUser) {
+      return res.send(errResponse(status.EMAIL_ALREADY_EXIST));
+    }
+
+    // 5. 중복된 닉네임인지 검사
+    const existUser1 = await User.findOne({ nickname });
+    if (existUser1) {
+      return res.send(errResponse(status.NICKNAME_ALREADY_EXIST));
+    }
+
+    // 6. 비밀번호 암호화
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const newUser = new User({
       email,
       name,
+      nickname,
       phone,
       birth,
       password: hashedPassword,
@@ -39,19 +82,22 @@ export const registUser = async (req, res, next) => {
     return res.send(response(status.SUCCESS, savedUser));
   } catch (err) {
     console.error(err);
-    return new BaseError(status.INTERNAL_SERVER_ERROR);
+    return res.send(errResponse(status.INTERNAL_SERVER_ERROR));
   }
 };
 
-// 로그인
+/*
+ * API No. 2
+ * API Name : 로그인 API
+ * [POST] /auth/login
+ */
 export const login = async (req, res, next) => {
   const { email, password } = req.body;
 
   try {
     const user = await User.findOne({ email });
     if (!user || !bcrypt.compareSync(password, user.password)) {
-      // 비밀번호 일치 여부 검사
-      return new BaseError(status.UNAUTHORIZED);
+      return res.send(errResponse(status.MEMBER_NOT_FOUND));
     }
 
     const accessToken = generateAccessToken(user);
@@ -60,7 +106,26 @@ export const login = async (req, res, next) => {
     return res.send(response(status.SUCCESS, { accessToken, refreshToken }));
   } catch (error) {
     console.error(error);
-    return new BaseError(status.INTERNAL_SERVER_ERROR);
+    return res.send(errResponse(status.INTERNAL_SERVER_ERROR));
+  }
+};
+
+/*
+ * API No. 3
+ * API Name : 액세스 토큰 재발급 API
+ * [POST] /auth/regenerate-token
+ */
+export const regenerateToken = async (req, res, next) => {
+  const { _id, email } = req.user;
+
+  try {
+    const user = await User.findOne({ _id });
+    const accessToken = generateAccessToken(user); // 액세스 토큰 재발급
+
+    return res.send(response(status.SUCCESS, accessToken));
+  } catch (error) {
+    console.error(error);
+    return res.send(errResponse(status.INTERNAL_SERVER_ERROR));
   }
 };
 
@@ -75,4 +140,26 @@ export const getUserInfo = async (req, res, next) => {
     console.error(error);
     return new BaseError(status.INTERNAL_SERVER_ERROR);
   }
+};
+
+/*************************************************************************************/
+// 이메일 유효성 검사
+export const validEmailCheck = (email) => {
+  const pattern =
+    /^[0-9a-zA-Z]([-_.]?[0-9a-zA-Z])*@[0-9a-zA-Z]([-_.]?[0-9a-zA-Z])*.[a-zA-Z]{2,3}$/i;
+  return pattern.test(email);
+};
+
+// 핸드폰 번호 유효성 검사
+export const validCallNumberCheck = (phone) => {
+  //유효성 검사
+  const pattern =
+    /^(01[016789]{1}|02|0[3-9]{1}[0-9]{1})([0-9]{3,4})([0-9]{4})$/;
+  return pattern.test(phone.replace(/-/g, "")); // phone.replace(/-/g, "") -> - 삭제
+};
+
+// 비밀번호 유효성 검사
+export const validPasswordCheck = (password) => {
+  const pattern = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{6,20}$/;
+  return pattern.test(password);
 };

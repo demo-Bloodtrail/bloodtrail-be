@@ -5,11 +5,11 @@ import dotenv from "dotenv";
 import cors from "cors";
 
 import { connect } from "./src/config/database.js";
-import { response } from "./src/config/response.js";
-import { BaseError } from "./src/config/error.js";
+import { response, errResponse } from "./src/config/response.js";
 import { status } from "./src/config/responseStatus.js";
 import { healthRouter } from "./src/router/healthRouter.js";
 import { authRouter } from "./src/router/authRouter.js";
+import { imageRouter } from "./src/router/imageRouter.js";
 
 dotenv.config(); // .env 파일 사용 (환경 변수 관리)
 
@@ -27,6 +27,7 @@ app.use(express.urlencoded({ extended: false })); // 단순 객체 문자열 형
 app.use("/api-docs", SwaggerUi.serve, SwaggerUi.setup(specs)); // swagger
 app.use("/health", healthRouter); // health check
 app.use("/auth", authRouter); // auth
+app.use("/s3", imageRouter);
 
 app.get("/", (req, res, next) => {
   res.send(response(status.SUCCESS, "루트 페이지!"));
@@ -34,8 +35,7 @@ app.get("/", (req, res, next) => {
 
 // error handling
 app.use((req, res, next) => {
-  const err = new BaseError(status.NOT_FOUND);
-  next(err);
+  next(res.send(errResponse(status.NOT_FOUND)));
 });
 
 app.use((err, req, res, next) => {
