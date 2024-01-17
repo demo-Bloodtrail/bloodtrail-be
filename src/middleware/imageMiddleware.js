@@ -49,8 +49,11 @@ export const uploadSome = multer({
 
 // Case 3. S3에서 이미지 삭제
 export const deleteImage = async (fileKey) => {
+  const urlParts = fileKey.split("/");
+  const fileName = urlParts[urlParts.length - 1];
+
   return new Promise((resolve, reject) => {
-    if (!fileKey) {
+    if (!fileName) {
       const error = customErrResponse(
         status.BAD_REQUEST,
         "fileKey가 제공되지 않았습니다."
@@ -62,7 +65,7 @@ export const deleteImage = async (fileKey) => {
     s3.deleteObject(
       {
         Bucket: S3_BUCKET, // S3 Bucket의 이름
-        Key: fileKey, // 삭제할 파일의 키 (경로 및 파일 이름)
+        Key: fileName, // 삭제할 파일의 키 (경로 및 파일 이름)
       },
       (err, data) => {
         if (err) {
