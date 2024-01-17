@@ -19,7 +19,7 @@ export const generateAccessToken = (user) => {
   // secret으로 sign하여 발급하고 return
   return jwt.sign(payload, secret, {
     algorithm: "HS256", // 암호화 알고리즘
-    expiresIn: "1s", // 유효기간 = 1시간
+    expiresIn: "1h", // 유효기간 = 1시간
   });
 };
 
