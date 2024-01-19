@@ -141,7 +141,7 @@ export const getUserInfo = async (req, res, next) => {
     return new BaseError(status.INTERNAL_SERVER_ERROR);
   }
 };
-
+ 
 /*************************************************************************************/
 // 이메일 유효성 검사
 export const validEmailCheck = (email) => {
