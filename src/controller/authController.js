@@ -189,7 +189,6 @@ export const getUserInfo = async (req, res, next) => {
  * API No. 7
  * API Name : 프로필 수정
  * [PATCH] /auth/update
- * TO DO : profile_image 수정 로직 추가
  */
 export const updateUserInfo = async (req, res, next) => {
   const { _id, email } = req.user;

@@ -80,21 +80,3 @@ export const removeRefreshToken = (user) => {
     resolve(result);
   });
 };
-
-// // refresh token 삭제
-// export const removeRefreshToken = (user) => {
-//   return new Promise((resolve, reject) => {
-//     redisClient.del(user._id.toString(), (err, reply) => {
-//       if (err) {
-//         console.log('Redis와 연결 후 DEL 실패');
-//         reject(errResponse(status.UNAUTHORIZED));
-//       } else if (reply === 1) {
-//         console.log('Redis에서 Refresh Token 삭제');
-//         resolve(reply);
-//       } else {
-//         console.log('Redis에서 사용자와 일치하는 Refresh Token이 없음');
-//         reject(errResponse(status.UNAUTHORIZED));
-//       }
-//     });
-//   });
-// };
