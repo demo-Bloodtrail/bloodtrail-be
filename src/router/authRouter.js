@@ -2,11 +2,8 @@ import express from "express";
 import {
   registUser,
   login,
-  regenerateToken,
-  logout,
-  withdrawUser,
   getUserInfo,
-  updateUserInfo,
+  regenerateToken,
 } from "../controller/authController";
 import {
   authenticateUser,
@@ -15,10 +12,7 @@ import {
 
 export const authRouter = express.Router();
 
-authRouter.post("/register", registUser);
 authRouter.post("/login", login);
-authRouter.post("/regenerate-token", authenticateWithRefresh, regenerateToken);
-authRouter.post("/logout", authenticateUser, logout);
-authRouter.patch("/withdraw", authenticateUser, withdrawUser);
+authRouter.post("/register", registUser);
 authRouter.get("/profile", authenticateUser, getUserInfo);
-authRouter.patch("/update", authenticateUser, updateUserInfo);
+authRouter.post("/regenerate-token", authenticateWithRefresh, regenerateToken);
