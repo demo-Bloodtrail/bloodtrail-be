@@ -3,6 +3,7 @@ import jwt from "jsonwebtoken";
 import redisClient from "../config/redis.js";
 import { status } from "../config/responseStatus.js";
 import { errResponse } from "../config/response.js";
+import { REPL_MODE_SLOPPY } from "repl";
 
 dotenv.config(); // .env 파일 사용 (환경 변수 관리)
 
@@ -71,3 +72,29 @@ export const verifyRefreshToken = (token, userId) => {
     });
   });
 };
+
+// refresh token 삭제
+export const removeRefreshToken = (user) => {
+  return new Promise((resolve, reject) => {
+    const result = redisClient.del(user._id.toString());
+    resolve(result);
+  });
+};
+
+// // refresh token 삭제
+// export const removeRefreshToken = (user) => {
+//   return new Promise((resolve, reject) => {
+//     redisClient.del(user._id.toString(), (err, reply) => {
+//       if (err) {
+//         console.log('Redis와 연결 후 DEL 실패');
+//         reject(errResponse(status.UNAUTHORIZED));
+//       } else if (reply === 1) {
+//         console.log('Redis에서 Refresh Token 삭제');
+//         resolve(reply);
+//       } else {
+//         console.log('Redis에서 사용자와 일치하는 Refresh Token이 없음');
+//         reject(errResponse(status.UNAUTHORIZED));
+//       }
+//     });
+//   });
+// };
