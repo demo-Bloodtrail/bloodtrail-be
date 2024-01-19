@@ -3,7 +3,6 @@ import jwt from "jsonwebtoken";
 import redisClient from "../config/redis.js";
 import { status } from "../config/responseStatus.js";
 import { errResponse } from "../config/response.js";
-import { REPL_MODE_SLOPPY } from "repl";
 
 dotenv.config(); // .env 파일 사용 (환경 변수 관리)
 

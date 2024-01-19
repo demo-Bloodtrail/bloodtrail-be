@@ -10,6 +10,7 @@ import { status } from "./src/config/responseStatus.js";
 import { healthRouter } from "./src/router/healthRouter.js";
 import { authRouter } from "./src/router/authRouter.js";
 import { imageRouter } from "./src/router/imageRouter.js";
+import { postRouter } from './src/router/postRouter.js'; // Goosmos
 
 dotenv.config(); // .env 파일 사용 (환경 변수 관리)
 
@@ -28,6 +29,7 @@ app.use("/api-docs", SwaggerUi.serve, SwaggerUi.setup(specs)); // swagger
 app.use("/health", healthRouter); // health check
 app.use("/auth", authRouter); // auth
 app.use("/s3", imageRouter);
+app.use("/post", postRouter); // post
 
 app.get("/", (req, res, next) => {
   res.send(response(status.SUCCESS, "루트 페이지!"));

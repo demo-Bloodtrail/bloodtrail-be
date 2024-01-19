@@ -1,11 +1,18 @@
 import mongoose from 'mongoose';
+// import User from '../schemas/users.js';
 const Schema = mongoose.Schema;
+const { Types: { ObjectId } } = Schema;
 
+var PostType = ['FREE', 'HONOR', 'CERTIFIY', 'INFO'];
 
 const PostSchema = new Schema({
     writer: {
-        type: Schema.Types.ObjectId, // 확인해보기
-        required: true,
+        id: {
+            type: ObjectId,
+            required: true,
+            ref: "User",
+        },
+        nickname: String,
     },
     title: {
         type: String,
@@ -19,35 +26,31 @@ const PostSchema = new Schema({
         type: String, // S3 upload url
     },
     types: {
-        type: ['FREE', 'HONOR', 'CERTIFIY', 'INFO'],
+        type: String,
         required: true,
     },
     likes: {
         type: Number,
-        required: true,
         default: 0,
     },
     status: {
         type: Boolean,
-        required: true,
         default: true,
     },
     watch_count: {
         type: Number,
-        required: true,
         default: 0,
     },
     created_at: {
         type: Date,
-        required: true,
-        defualt: Date.now,
+        default: Date.now,
     },
     updated_at: {
         type: Date,
-        required: true,
-        defualt: Date.now,
+        default: Date.now,
     },
-});
+}, { versionKey: false } // 데이터 삽입 시 __v 칼럼 생성 X
+);
 
 
 const Post = mongoose.model("Post", PostSchema);

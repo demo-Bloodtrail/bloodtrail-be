@@ -2,11 +2,8 @@ import express from "express";
 import {
   registUser,
   login,
-  regenerateToken,
-  logout,
-  withdrawUser,
   getUserInfo,
-  updateUserInfo,
+  regenerateToken,
 } from "../controller/authController";
 import {
   authenticateUser,
