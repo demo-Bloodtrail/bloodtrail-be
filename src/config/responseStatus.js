@@ -49,11 +49,11 @@ export const status = {
     code: "MEMBER4001",
     message: "사용자가 없습니다.",
   },
-  NICKNAME_NOT_EXIST: {
+  NICKNAME_ALREADY_EXIST: {
     status: StatusCodes.BAD_REQUEST,
     isSuccess: false,
     code: "MEMBER4002",
-    message: "닉네임은 필수입니다.",
+    message: "이미 존재하는 닉네임입니다.",
   },
   EMAIL_ALREADY_EXIST: {
     status: StatusCodes.BAD_REQUEST,
