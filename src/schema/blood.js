@@ -31,7 +31,7 @@ const bloodSchema = new Schema(
     // 혈액형
     blood_type: {
       type: String,
-      enum: ["A", "AB", "B", "O"],
+      enum: ["A+", "AB+", "B+", "O+", "A-", "AB-", "B-", "O-"],
       required: true,
     },
     /*
@@ -87,6 +87,23 @@ const bloodSchema = new Schema(
     hospital: {
       type: Schema.Types.Mixed, // (String, Number) 타입을 가짐
       required: true,
+    },
+    // 조회수
+    views: {
+      type: Number,
+      default: 0,
+    },
+    // 좋아요 누른 유저
+    likes: [
+      {
+        type: ObjectId,
+        ref: "User",
+      },
+    ],
+    // 좋아요 개수
+    likeCount: {
+      type: Number,
+      default: 0,
     },
     // 생성일
     created_at: {
