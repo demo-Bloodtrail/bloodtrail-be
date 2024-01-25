@@ -1,19 +1,20 @@
 import express from 'express';
-import { getFreePosts, getHonorPosts, getCertifyPosts, getInfoPosts } from '../controller/postController.js';
-import { viewPost, deletePost, postNewPost, amendPost } from '../controller/postController.js';
-import { checkNewPost } from '../middleware/postMiddleware.js';
-import { patchLike, postComment } from '../controller/commentController.js';
+import { checkGetFreeType, checkGetHonorType, checkGetCertifyType, checkGetInfoType } from '../middleware/postMiddleware.js';
+import { viewPost, deletePost, postNewPost } from '../controller/postController.js';
+import { checkPost } from '../middleware/postMiddleware.js';
+import { patchLike, postComment, amendPost } from '../controller/commentController.js';
 
 export const postRouter = express.Router();
 
-postRouter.get('/free', getFreePosts);
-postRouter.get('/honor', getHonorPosts);
-postRouter.get('/certify', getCertifyPosts);
-postRouter.get('/info', getInfoPosts);
-postRouter.post('/newpost', checkNewPost, postNewPost);
+postRouter.get('/free', checkGetFreeType);
+postRouter.get('/honor', checkGetHonorType);
+postRouter.get('/certify', checkGetCertifyType);
+postRouter.get('/info', checkGetInfoType);
+
+postRouter.post('/newpost', checkPost, postNewPost);
 
 postRouter.patch('/:id', viewPost);
 postRouter.delete('/:id', deletePost);
 postRouter.patch('/:id/like', patchLike);
-postRouter.patch('/:id/amend', amendPost);
+postRouter.patch('/:id/amend', checkPost, amendPost);
 postRouter.post('/:id/comment', postComment);

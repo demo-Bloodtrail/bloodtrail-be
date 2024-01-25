@@ -1,9 +1,6 @@
 import mongoose from 'mongoose';
-// import User from '../schemas/users.js';
 const Schema = mongoose.Schema;
 const { Types: { ObjectId } } = Schema;
-
-var PostType = ['FREE', 'HONOR', 'CERTIFIY', 'INFO'];
 
 const PostSchema = new Schema({
     writer: {
