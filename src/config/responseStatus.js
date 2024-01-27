@@ -87,4 +87,12 @@ export const status = {
     code: "BLOOD4004",
     message: "작성자만 수정할 수 있습니다.",
   },
+
+  // history err
+  HISTORY_NOT_FOUND: {
+    status: StatusCodes.BAD_REQUEST,
+    isSuccess: false,
+    code: "HISTORY4001",
+    message: "해당 헌혈 정보를 찾을 수 없습니다.",
+  },
 };
