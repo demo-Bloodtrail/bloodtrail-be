@@ -2,14 +2,30 @@ import mongoose from 'mongoose';
 const Schema = mongoose.Schema;
 const { Types: { ObjectId } } = Schema;
 
+// const claim_type = ['UNHEALTHY', 'FINANCE', 'FRAUD', 'ABUSE', 'ETC'];
+
 const ReportSchema = new Schema({
-    type: {
-        type: (String, ObjectId),
-        required: true,
-    },
     claim_info: {
-        type: (['UNHEALTHY', 'FINANCE', 'FRAUD', 'ABUSE', 'ETC'], ObjectId),
+        target: {
+            type: String,
+            required: true,
+        },
+        reaseon: {
+            type: String,
+            required: true,
+        }
+    },
+    post_id: {
+        type: ObjectId,
         required: true,
+        unique: true,
+        ref: 'Post'
+    },
+    comment_id: {
+        type: ObjectId,
+        required: true,
+        unique: true,
+        ref: 'Comment'
     },
     claimer: {
         type: ObjectId,
@@ -18,7 +34,6 @@ const ReportSchema = new Schema({
     },
     created_at: {
         type: Date,
-        required: true,
         defualt: Date.now,
     },
 }, { versionKey: false } // 데이터 삽입 시 __v 칼럼 생성 X

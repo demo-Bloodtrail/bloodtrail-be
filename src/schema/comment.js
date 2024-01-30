@@ -1,5 +1,4 @@
 import mongoose from 'mongoose';
-// import Post from '../schemas/posts.js';
 const { Schema } = mongoose;
 const { Types: { ObjectId } } = Schema;
 
@@ -22,6 +21,10 @@ const CommentSchema = new Schema({
     type: String,
     required: true,
   },
+  // report_count: {
+  //   type: Number,
+  //   default: true
+  // },
   created_at: {
     type: Date,
     default: Date.now,

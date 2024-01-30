@@ -1,9 +1,8 @@
 import mongoose from 'mongoose';
-// import User from '../schemas/users.js';
 const Schema = mongoose.Schema;
 const { Types: { ObjectId } } = Schema;
 
-var PostType = ['FREE', 'HONOR', 'CERTIFIY', 'INFO'];
+// const PostType = ['FREE', 'HONOR', 'CERTIFIY', 'INFO'];
 
 const PostSchema = new Schema({
     writer: {
@@ -23,12 +22,17 @@ const PostSchema = new Schema({
         required: true,
     },
     image: {
-        type: String, // S3 upload url
+        type: [String], // S3 upload url
     },
     types: {
         type: String,
         required: true,
     },
+    like_users: [{ // 좋아요를 누를 때 접속자의 아이디에 따라 리스트에 추가하여 좋아요를 취소할 경우 조회하여 해결
+        type: ObjectId,
+        default: [],
+        ref: "User",
+    }],
     likes: {
         type: Number,
         default: 0,
@@ -41,6 +45,10 @@ const PostSchema = new Schema({
         type: Number,
         default: 0,
     },
+    // report_count: {
+    //     type: Number,
+    //     default: 0
+    // },
     created_at: {
         type: Date,
         default: Date.now,
