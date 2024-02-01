@@ -21,10 +21,10 @@ const CommentSchema = new Schema({
     type: String,
     required: true,
   },
-  // report_count: {
-  //   type: Number,
-  //   default: true
-  // },
+  status: {
+    type: Boolean,
+    default: true,
+  },
   created_at: {
     type: Date,
     default: Date.now,

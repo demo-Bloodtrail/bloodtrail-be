@@ -1,12 +1,9 @@
 import Post from '../schema/post.js';
 import User from '../schema/user.js';
 import { status } from "../config/responseStatus.js";
-import { errResponse, response } from '../config/response.js';
+import { customErrResponse, errResponse, response } from '../config/response.js';
 import { getPostComments } from '../controller/commentController.js';
 
-
-// 줄글 형식으로 글들을 가져오기
-// status 확인 필요
 export const getLinePosting = async (req, res, next) => {
     const page = req.query.page || 1; // 게시글 페이지를 이용하여 페이징
     const perPage = 7; // best 게시글을 제외한 최신 게시글은 7개를 기본 단위로 사용
@@ -34,12 +31,11 @@ export const getLinePosting = async (req, res, next) => {
             return res.send(response(status.SUCCESS, Page));
         }
     } catch ( error ) {
-        res.send(errResponse(status.INTERNAL_SERVER_ERROR));
+        return res.send(errResponse(status.INTERNAL_SERVER_ERROR));
     }
 }
 
 // 갤러리 형식으로 글들을 가져오기
-// status 확인필요
 export const getGalleryPosting = async (req, res, next) => {
     const page = req.query.page || 1; // 게시글 페이지를 이용하여 페이징
     const perPage = 6; // best 게시글을 제외한 최신 게시글은 6개를 기본 단위로 사용
@@ -49,25 +45,25 @@ export const getGalleryPosting = async (req, res, next) => {
         const sorttype = req.query.sorttype; // [created_at, likes]
 
         const bestPost = await Post.find({ types: posttype, likes: { $gte: 10 }, status: true }, {
-            writer: true, title: true, likes: true, watch_count: true, created_at: true })
+            writer: true, title: true, image: true, likes: true, watch_count: true, created_at: true })
         .sort({ likes: -1 }).limit(3);
 
         if (sorttype === 'created_at') {
             const post = await Post.find({ types: posttype, status: true }, {
-                writer: true, title: true, likes: true, watch_count: true, created_at: true
+                writer: true, title: true, image: true, likes: true, watch_count: true, created_at: true
             }).sort({ created_at: -1 }).skip((page - 1) * perPage).limit(perPage); // sorttype 
             const Page = [bestPost, post];
             return res.send(response(status.SUCCESS, Page));
         }
         else {
             const post = await Post.find({ types: posttype, status: true }, {
-                writer: true, title: true, likes: true, watch_count: true, created_at: true
+                writer: true, title: true, image: true, likes: true, watch_count: true, created_at: true
             }).sort({ likes: -1 }).skip((page - 1) * perPage).limit(perPage); // sorttype 
             const Page = [bestPost, post];
             return res.send(response(status.SUCCESS, Page));
         }
     } catch ( error ) {
-        res.send(errResponse(status.INTERNAL_SERVER_ERROR));
+        return res.send(errResponse(status.INTERNAL_SERVER_ERROR));
     }
 }
 
@@ -83,10 +79,9 @@ export const viewPost = async (req, res, next) => {
 
         // 추천 게시글 가져오기
 
-
         return res.send(response(status.SUCCESS, [post, commentList]));
     } catch ( error ) {
-        res.send(errResponse(status.INTERNAL_SERVER_ERROR));
+        return res.send(errResponse(status.INTERNAL_SERVER_ERROR));
     }
 };
 
@@ -100,23 +95,28 @@ export const deletePost = async(req, res, next) => {
         const writerId = post.writer.id;
 
         if (String(writerId) !== _id) { 
-            return res.send(errResponse(status.BAD_REQUEST));
+            return res.send(customErrResponse(status.BAD_REQUEST, '작성자가 아닙니다.'));
         }
 
         await Post.findByIdAndDelete({ _id: postId });
-        res.send(response(status.SUCCESS));
+        return res.send(response(status.SUCCESS, '게시글 삭제 성공'));
     } catch ( error ) {
-        res.send(errResponse(status.INTERNAL_SERVER_ERROR));
+        return res.send(errResponse(status.INTERNAL_SERVER_ERROR));
     }
 };
 
 // 포스팅 게시하기
-// 명예 게시판이 사용가능한 명예회원인지 확인하고 글을 작성할 수 있도록 한다.
 export const postNewPost = async (req, res, next) => {
     try {
-        const { title, content, image, types } = req.body;
+        const { title, content, types } = req.body;
         const { _id, email } = req.user;
         const writer = await User.findById(_id);
+        const uploadedFiles = req.files;
+        let fileUrls;
+        if (uploadedFiles && uploadedFiles.length != 0) {
+            fileUrls = uploadedFiles.map((file) => file.location);
+        }
+
         const newPost = new Post({
             writer: {
                 id: _id,
@@ -124,13 +124,13 @@ export const postNewPost = async (req, res, next) => {
             },
             title,
             content,
-            image,
+            image: fileUrls || [],
             types,
             created_at: Date.now(),
             updated_at: Date.now(),
         });
         await newPost.save();
-        res.send(response(status.SUCCESS));
+        return res.send(response(status.SUCCESS, "게시글 작성 성공"));
     } catch ( error ) {
         res.send(errResponse(status.INTERNAL_SERVER_ERROR));
     }
@@ -156,21 +156,42 @@ export const checkUserAmend = async (req, res, next) => {
     }
 }
 
-// /post/{id}/amend
 export const amendPost = async(req, res, next) => {
     try {
         const postId = req.params.id;
         const { _id, email } = req.user;
-        const { title, content, image, types } = req.body;
+        const { title, content, types } = req.body;
+        const uploadedFiles = req.files;
 
-        const post = await Post.findOneAndUpdate({ _id: postId }, { 
-            title: title, 
-            content: content, 
-            image: image,
-            types: types,
-            updated_at: Date.now()
-        });
-        return res.send(response(status.SUCCESS));
+        const post = await Post.findById(postId);
+
+        if (post.writer.id != _id) return res.send(errResponse(status.BAD_REQUEST));
+
+        const fileKeys = post.image;
+        try {
+            for (const fileKey of fileKeys) await deleteImage(fileKey);
+        } catch ( error ) {
+            return res.send(error);
+        }
+
+        let fileUrls;
+        if(uploadedFiles && uploadedFiles.length != 0) {
+            fileUrls = uploadedFiles.map((file) => file.location);
+        }
+
+        try {
+            const updatedPost = await Post.findOneAndUpdate({ _id: postId }, {
+                title: title, 
+                content: content, 
+                image: fileUrls || [],
+                types: types,
+                updated_at: Date.now()
+                }, { new: true }
+            );
+        } catch ( error ) {
+            return res.send(errResponse(status.BAD_REQUEST));
+        }
+        return res.send(response(status.SUCCESS, "글 수정하기 성공"));
     } catch ( error ) {
         res.send(errResponse(status.INTERNAL_SERVER_ERROR));
     }

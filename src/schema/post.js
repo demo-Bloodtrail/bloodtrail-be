@@ -45,10 +45,6 @@ const PostSchema = new Schema({
         type: Number,
         default: 0,
     },
-    // report_count: {
-    //     type: Number,
-    //     default: 0
-    // },
     created_at: {
         type: Date,
         default: Date.now,

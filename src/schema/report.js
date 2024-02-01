@@ -10,21 +10,17 @@ const ReportSchema = new Schema({
             type: String,
             required: true,
         },
-        reaseon: {
+        reason: {
             type: String,
             required: true,
         }
     },
     post_id: {
         type: ObjectId,
-        required: true,
-        unique: true,
         ref: 'Post'
     },
     comment_id: {
         type: ObjectId,
-        required: true,
-        unique: true,
         ref: 'Comment'
     },
     claimer: {
