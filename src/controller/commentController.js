@@ -77,7 +77,7 @@ export const getPostComments = async (req, res, next) => {
     try {
         const id = req.params.id;
         const commentsList = await Comment.find({ post: id, status: true }, { commenter: true, comment: true, created_at: true })
-        .sort({ created_at: -1 })
+        .sort({ created_at: -1 });
         return commentsList;
     } catch ( error ) {
         return res.send(errResponse(status.INTERNAL_SERVER_ERROR));

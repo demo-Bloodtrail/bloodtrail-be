@@ -4,17 +4,19 @@ import { status } from "../config/responseStatus.js";
 import { customErrResponse, errResponse, response } from '../config/response.js';
 import { getPostComments } from '../controller/commentController.js';
 
+
+// 줄글 형식으로 게시글을 확인하기
 export const getLinePosting = async (req, res, next) => {
     const page = req.query.page || 1; // 게시글 페이지를 이용하여 페이징
     const perPage = 7; // best 게시글을 제외한 최신 게시글은 7개를 기본 단위로 사용
 
     try {
-        const posttype = req.query.posttype;
+        const posttype = req.query.posttype; // [FREE, HONOR, INFO, CERTIFY]
         const sorttype = req.query.sorttype; // [created_at, likes]
 
         const bestPost = await Post.find({ types: posttype, likes: { $gte: 10 }, status: true }, {
             writer: true, title: true, likes: true, watch_count: true, created_at: true })
-        .sort({ likes: -1 }).limit(3);
+        .sort({ likes: -1 }).limit(3); // 공감이 10개 이상인 게시글 중 상위 3개를 선택
 
         if (sorttype === 'created_at') { // 최신순 정렬
             const post = await Post.find({ types: posttype, status: true }, {
@@ -41,21 +43,21 @@ export const getGalleryPosting = async (req, res, next) => {
     const perPage = 6; // best 게시글을 제외한 최신 게시글은 6개를 기본 단위로 사용
 
     try {
-        const posttype = req.query.posttype;
+        const posttype = req.query.posttype; // [FREE, HONOR, INFO, CERTIFY]
         const sorttype = req.query.sorttype; // [created_at, likes]
 
         const bestPost = await Post.find({ types: posttype, likes: { $gte: 10 }, status: true }, {
             writer: true, title: true, image: true, likes: true, watch_count: true, created_at: true })
-        .sort({ likes: -1 }).limit(3);
+        .sort({ likes: -1 }).limit(3); // 공감이 10개 이상인 게시글 중 상위 3개를 선택
 
-        if (sorttype === 'created_at') {
+        if (sorttype === 'created_at') { // 최신순 정렬
             const post = await Post.find({ types: posttype, status: true }, {
                 writer: true, title: true, image: true, likes: true, watch_count: true, created_at: true
             }).sort({ created_at: -1 }).skip((page - 1) * perPage).limit(perPage); // sorttype 
             const Page = [bestPost, post];
             return res.send(response(status.SUCCESS, Page));
         }
-        else {
+        else { // 공감순 정렬
             const post = await Post.find({ types: posttype, status: true }, {
                 writer: true, title: true, image: true, likes: true, watch_count: true, created_at: true
             }).sort({ likes: -1 }).skip((page - 1) * perPage).limit(perPage); // sorttype 
@@ -67,7 +69,7 @@ export const getGalleryPosting = async (req, res, next) => {
     }
 }
 
-// 게시글의 주변 게시글 가져오기
+// 게시글 상세조회와 게시글 조회수 증가, 해당 게시글에 작성된 댓글도 같이 가져오기
 export const viewPost = async (req, res, next) => {
     try {
         const { _id, email } = req.user;
@@ -77,7 +79,7 @@ export const viewPost = async (req, res, next) => {
 
         const commentList = await getPostComments(req, res, next); // 댓글 가져오기
 
-        // 추천 게시글 가져오기
+        // 추천 게시글 가져오기 -> 추가하기
 
         return res.send(response(status.SUCCESS, [post, commentList]));
     } catch ( error ) {
@@ -94,7 +96,7 @@ export const deletePost = async(req, res, next) => {
         const post = await Post.findById({ _id: postId });
         const writerId = post.writer.id;
 
-        if (String(writerId) !== _id) { 
+        if (String(writerId) !== _id) {  // 게시글 작성자와 사용자가 동일한지 검사
             return res.send(customErrResponse(status.BAD_REQUEST, '작성자가 아닙니다.'));
         }
 
@@ -112,6 +114,7 @@ export const postNewPost = async (req, res, next) => {
         const { _id, email } = req.user;
         const writer = await User.findById(_id);
         const uploadedFiles = req.files;
+
         let fileUrls;
         if (uploadedFiles && uploadedFiles.length != 0) {
             fileUrls = uploadedFiles.map((file) => file.location);
@@ -143,12 +146,11 @@ export const checkUserAmend = async (req, res, next) => {
 
         const post = await Post.findById({ _id: postId });
 
-        if (String(post.writer.id) === _id) {
+        if (String(post.writer.id) === _id) { // 게시글 작성자와 사용자가 동일한지 검사
             amendPost(req, res, next);
         }
         else {
-            console.log("수정이 불가능한 사용자입니다.");
-            return res.send(errResponse(status.BAD_REQUEST));
+            return res.send(customErrResponse(status.BAD_REQUEST, '작성자가 아닙니다.'));
         }
 
     } catch ( error ) {
@@ -156,7 +158,7 @@ export const checkUserAmend = async (req, res, next) => {
     }
 }
 
-export const amendPost = async(req, res, next) => {
+export const amendPost = async (req, res, next) => {
     try {
         const postId = req.params.id;
         const { _id, email } = req.user;
