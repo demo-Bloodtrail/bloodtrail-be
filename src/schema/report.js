@@ -2,8 +2,6 @@ import mongoose from 'mongoose';
 const Schema = mongoose.Schema;
 const { Types: { ObjectId } } = Schema;
 
-// const claim_type = ['UNHEALTHY', 'FINANCE', 'FRAUD', 'ABUSE', 'ETC'];
-
 const ReportSchema = new Schema({
     claim_info: {
         target: {
@@ -17,15 +15,18 @@ const ReportSchema = new Schema({
     },
     post_id: {
         type: ObjectId,
+        unique: false,
         ref: 'Post'
     },
     comment_id: {
         type: ObjectId,
+        unique: false,
         ref: 'Comment'
     },
     claimer: {
         type: ObjectId,
         required: true,
+        unique: false,
         ref: 'User',
     },
     created_at: {

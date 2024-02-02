@@ -28,5 +28,5 @@ postRouter.patch('/:id', authenticateUser, uploadSome, checkPost, amendPost);
 postRouter.patch('/:id/like', authenticateUser, patchLike);
 postRouter.patch('/:id/unlike', authenticateUser, deleteLike);
 
-// 댓글 작성하기
+// 댓글 작성하기 -> 에러 발생
 postRouter.post('/:id/comment', authenticateUser, postComment);
