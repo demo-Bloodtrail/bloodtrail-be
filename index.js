@@ -13,6 +13,7 @@ import { imageRouter } from "./src/router/imageRouter.js";
 import { postRouter } from "./src/router/postRouter.js"; // Goosmos
 import { bloodRouter } from "./src/router/bloodRouter.js";
 import { historyRouter } from "./src/router/historyRouter.js";
+import { crewRouter } from "./src/router/crewRouter.js";
 
 dotenv.config(); // .env 파일 사용 (환경 변수 관리)
 
@@ -34,6 +35,7 @@ app.use("/s3", imageRouter); // image
 app.use("/post", postRouter); // post
 app.use("/blood", bloodRouter); // blood
 app.use("/history", historyRouter); // history
+app.use("/crew", crewRouter); // crew
 
 app.get("/", (req, res, next) => {
   res.send(response(status.SUCCESS, "루트 페이지!"));
