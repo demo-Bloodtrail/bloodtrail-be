@@ -1,187 +1,200 @@
 import Post from '../schema/post.js';
 import User from '../schema/user.js';
+import { status } from "../config/responseStatus.js";
+import { customErrResponse, errResponse, response } from '../config/response.js';
+import { getPostComments } from '../controller/commentController.js';
 
-// /post/free
-export const getFreePosts = async (req, res, next) => {
+
+// 줄글 형식으로 게시글을 확인하기
+export const getLinePosting = async (req, res, next) => {
     const page = req.query.page || 1; // 게시글 페이지를 이용하여 페이징
     const perPage = 7; // best 게시글을 제외한 최신 게시글은 7개를 기본 단위로 사용
 
     try {
-        const post = await Post.find({ types: 'FREE' }, { // 최신순으로 정렬된 게시글 7개를 가져온다.
+        const posttype = req.query.posttype; // [FREE, HONOR, INFO, CERTIFY]
+        const sorttype = req.query.sorttype; // [created_at, likes]
+
+        const bestPost = await Post.find({ types: posttype, likes: { $gte: 10 }, status: true }, {
             writer: true, title: true, likes: true, watch_count: true, created_at: true })
-        .sort({ created_at: -1 })
-        .skip((page - 1) * perPage)
-        .limit(perPage); 
+        .sort({ likes: -1 }).limit(3); // 공감이 10개 이상인 게시글 중 상위 3개를 선택
 
-        const bestPost = await Post.find({ types: 'FREE', likes: { $gte: 10 } }, { // 베스트 게시글 상위 3개를 가져온다.
-            writer: true, title: true, likes: true, watch_count: true, created_at: true })
-        .sort({ likes: -1 }).limit(3);
-
-        if (!post) { // 포스팅이 없는 경우 
-            console.log("Free post is empty");
-            next();
+        if (sorttype === 'created_at') { // 최신순 정렬
+            const post = await Post.find({ types: posttype, status: true }, {
+                writer: true, title: true, likes: true, watch_count: true, created_at: true
+            }).sort({ created_at: -1 }).skip((page - 1) * perPage).limit(perPage); // sorttype 
+            const Page = [bestPost, post];
+            return res.send(response(status.SUCCESS, Page));
         }
-
-        const Page = [bestPost, post];
-        console.log(Page);
-        res.json(Page);
-    } catch ( error ) {
-        console.error(error);
-        next(error);
-    }
-};
-
-// post/honor
-export const getHonorPosts = async (req, res, next ) => {
-    const page = req.query.page || 1;
-    const perPage = 7;
-
-    try {
-        const post = await Post.find({ types: 'HONOR' }, { 
-            writer: true, title: true, likes: true, 
-            watch_count: true, created_at: true } ).sort({ created_at: -1 }).skip((page - 1) * perPage).limit(perPage);
-
-        const bestPost = await Post.find({ types: 'HONOR', likes: { $gte: 10 } } , { 
-            writer: true, title: true, likes: true,
-            watch_count: true, created_at: true } ).sort({ likes: -1 }).limit(3) // 명예게시판의 베스트 게시글 3개 가져오기
-
-        if(!post) {
-            console.log("Empty Honor Posting")
-            next();
+        else { // 공감순 정렬
+            const post = await Post.find({ types: posttype, status: true }, {
+                writer: true, title: true, likes: true, watch_count: true, created_at: true
+            }).sort({ likes: -1 }).skip((page - 1) * perPage).limit(perPage); // sorttype 
+            const Page = [bestPost, post];
+            return res.send(response(status.SUCCESS, Page));
         }
-        const Page = [bestPost, post];
-        console.log(Page);
-        res.json(Page);
-        
     } catch ( error ) {
-        console.error(error);
-        next(error);
+        return res.send(errResponse(status.INTERNAL_SERVER_ERROR));
     }
-};
+}
 
-// post/certify
-export const getCertifyPosts = async (req, res, next ) => {
-    const page = req.query.page || 1;
-    const perPage = 7;
+// 갤러리 형식으로 글들을 가져오기
+export const getGalleryPosting = async (req, res, next) => {
+    const page = req.query.page || 1; // 게시글 페이지를 이용하여 페이징
+    const perPage = 6; // best 게시글을 제외한 최신 게시글은 6개를 기본 단위로 사용
 
     try {
-        const post = await Post.find({ types: 'CERTIFY' }, { writer: true, title: true, likes: true, 
-        watch_count: true, created_at: true } )
-        .sort({ created_at: -1 }) // 최신순 정렬해서 보여주기
-        .skip((page - 1) * perPage)
-        .limit(perPage);
+        const posttype = req.query.posttype; // [FREE, HONOR, INFO, CERTIFY]
+        const sorttype = req.query.sorttype; // [created_at, likes]
 
-        const bestPost = await Post.find({ types: 'CERTIFY', likes: { $gte: 10 } } , { writer: true, title: true, likes: true,
-        watch_count: true, created_at: true } ).sort({ likes: -1 }).limit(3); // 헌혈인증게시판의 베스트 게시글 3개 가져오기
+        const bestPost = await Post.find({ types: posttype, likes: { $gte: 10 }, status: true }, {
+            writer: true, title: true, image: true, likes: true, watch_count: true, created_at: true })
+        .sort({ likes: -1 }).limit(3); // 공감이 10개 이상인 게시글 중 상위 3개를 선택
 
-        if(!post) {
-            console.log("Empty Certify Posting")
-        } 
-        const Page = [bestPost, post];
-        console.log(Page);
-        res.json(Page);
+        if (sorttype === 'created_at') { // 최신순 정렬
+            const post = await Post.find({ types: posttype, status: true }, {
+                writer: true, title: true, image: true, likes: true, watch_count: true, created_at: true
+            }).sort({ created_at: -1 }).skip((page - 1) * perPage).limit(perPage); // sorttype 
+            const Page = [bestPost, post];
+            return res.send(response(status.SUCCESS, Page));
+        }
+        else { // 공감순 정렬
+            const post = await Post.find({ types: posttype, status: true }, {
+                writer: true, title: true, image: true, likes: true, watch_count: true, created_at: true
+            }).sort({ likes: -1 }).skip((page - 1) * perPage).limit(perPage); // sorttype 
+            const Page = [bestPost, post];
+            return res.send(response(status.SUCCESS, Page));
+        }
     } catch ( error ) {
-        console.error(error);
-        next(error);
+        return res.send(errResponse(status.INTERNAL_SERVER_ERROR));
     }
-};
+}
 
-// post/info
-export const getInfoPosts = async (req, res, next ) => {
-    const page = req.query.page || 1;
-    const perPage = 7;
-
-    try {
-        const post = await Post.find({ types: 'INFO' }, { writer: true, title: true, likes: true, 
-        watch_count: true, created_at: true } )
-        .sort({ created_at: -1 }) // 최신순 정렬해서 보여주기
-        .skip((page - 1) * perPage)
-        .limit(perPage);
-
-        const bestPost = await Post.find({ types: 'INFO', likes: { $gte: 10 } } , { writer: true, title: true, likes: true,
-        watch_count: true, created_at: true } ).sort({ likes: -1 }).limit(3); // 헌혈인증게시판의 베스트 게시글 3개 가져오기
-
-        if(!post) {
-            console.log("Empty Info Posting")
-        } 
-        const Page = [bestPost, post];
-        console.log(Page);
-        res.json(Page);
-    } catch ( error ) {
-        console.error(error);
-        next(error);
-    }
-};
-
-// /post/:id
+// 게시글 상세조회와 게시글 조회수 증가, 해당 게시글에 작성된 댓글도 같이 가져오기
 export const viewPost = async (req, res, next) => {
     try {
-        const id = req.params.id;
-        const post = await Post.findOneAndUpdate({ _id: id }, { $inc: { watch_count: +1 } }, { new: true });
-        console.log(id);
-        res.json(post);
+        const { _id, email } = req.user;
+        const postId = req.params.id;
+
+        const post = await Post.findOneAndUpdate({ _id: postId }, { $inc: { watch_count: +1 } }, { new: true });
+
+        const commentList = await getPostComments(req, res, next); // 댓글 가져오기
+
+        // 추천 게시글 가져오기 -> 추가하기
+
+        return res.send(response(status.SUCCESS, [post, commentList]));
     } catch ( error ) {
-        console.error(error);
-        next(error);
+        return res.send(errResponse(status.INTERNAL_SERVER_ERROR));
     }
 };
 
-// /post/{id}/
+// 포스팅 삭제하기
 export const deletePost = async(req, res, next) => {
     try {
-        console.log("check point");
+        const { _id, email } = req.user;
         const postId = req.params.id;
+
+        const post = await Post.findById({ _id: postId });
+        const writerId = post.writer.id;
+
+        if (String(writerId) !== _id) {  // 게시글 작성자와 사용자가 동일한지 검사
+            return res.send(customErrResponse(status.BAD_REQUEST, '작성자가 아닙니다.'));
+        }
+
         await Post.findByIdAndDelete({ _id: postId });
-        console.log(`${postId} is deleted`); // 404 error occured
-        res.send()
+        return res.send(response(status.SUCCESS, '게시글 삭제 성공'));
     } catch ( error ) {
-        console.error(error);
-        next(error);
+        return res.send(errResponse(status.INTERNAL_SERVER_ERROR));
     }
 };
 
-// /post/newpost
+// 포스팅 게시하기
 export const postNewPost = async (req, res, next) => {
     try {
-        const { writerId, title, content, image, types } = req.body;
-        const writer = await User.findById(writerId);
+        const { title, content, types } = req.body;
+        const { _id, email } = req.user;
+        const writer = await User.findById(_id);
+        const uploadedFiles = req.files;
+
+        let fileUrls;
+        if (uploadedFiles && uploadedFiles.length != 0) {
+            fileUrls = uploadedFiles.map((file) => file.location);
+        }
 
         const newPost = new Post({
             writer: {
-                id: writerId,
+                id: _id,
                 nickname: writer.nickname,
             },
             title,
             content,
-            image,
+            image: fileUrls || [],
             types,
             created_at: Date.now(),
             updated_at: Date.now(),
         });
-
         await newPost.save();
-        res.send(newPost);
+        return res.send(response(status.SUCCESS, "게시글 작성 성공"));
     } catch ( error ) {
-        console.error(error);
-        next(error);
+        res.send(errResponse(status.INTERNAL_SERVER_ERROR));
     }
 };
 
-// /post/{id}/amend
-export const amendPost = async(req, res, next) => {
+export const checkUserAmend = async (req, res, next) => {
     try {
         const postId = req.params.id;
-        const { title, content, image, types } = req.body;
-        const post = await Post.findOneAndUpdate({ _id: postId }, { 
-            title: title, 
-            content: content, 
-            image: image,
-            types: types,
-            updated_at: Date.now()
-        });
-        res.json(post);
+        const { _id, email } = req.user;
+
+        const post = await Post.findById({ _id: postId });
+
+        if (String(post.writer.id) === _id) { // 게시글 작성자와 사용자가 동일한지 검사
+            amendPost(req, res, next);
+        }
+        else {
+            return res.send(customErrResponse(status.BAD_REQUEST, '작성자가 아닙니다.'));
+        }
+
     } catch ( error ) {
-        console.error(error);
-        next(error);
+        res.send(errResponse(status.INTERNAL_SERVER_ERROR));
+    }
+}
+
+export const amendPost = async (req, res, next) => {
+    try {
+        const postId = req.params.id;
+        const { _id, email } = req.user;
+        const { title, content, types } = req.body;
+        const uploadedFiles = req.files;
+
+        const post = await Post.findById(postId);
+
+        if (post.writer.id != _id) return res.send(errResponse(status.BAD_REQUEST));
+
+        const fileKeys = post.image;
+        try {
+            for (const fileKey of fileKeys) await deleteImage(fileKey);
+        } catch ( error ) {
+            return res.send(error);
+        }
+
+        let fileUrls;
+        if(uploadedFiles && uploadedFiles.length != 0) {
+            fileUrls = uploadedFiles.map((file) => file.location);
+        }
+
+        try {
+            const updatedPost = await Post.findOneAndUpdate({ _id: postId }, {
+                title: title, 
+                content: content, 
+                image: fileUrls || [],
+                types: types,
+                updated_at: Date.now()
+                }, { new: true }
+            );
+        } catch ( error ) {
+            return res.send(errResponse(status.BAD_REQUEST));
+        }
+        return res.send(response(status.SUCCESS, "글 수정하기 성공"));
+    } catch ( error ) {
+        res.send(errResponse(status.INTERNAL_SERVER_ERROR));
     }
 }
