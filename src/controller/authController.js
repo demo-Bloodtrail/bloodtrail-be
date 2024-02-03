@@ -9,17 +9,23 @@ import User from "../schema/user.js";
 import {
   generateAccessToken,
   generateRefreshToken,
+  removeRefreshToken,
 } from "../middleware/jwtMiddleware.js";
+import { deleteImage } from "../middleware/imageMiddleware.js";
 
 /*
  * API No. 1
- * API Name : 회원가입 API
+ * API Name : 회원 가입 API
  * [POST] /auth/register
  * TO DO : S3 업로드 구현 후 이미지 업로드 로직 추가
  */
 export const registUser = async (req, res, next) => {
   try {
     const { email, name, nickname, phone, birth, password } = req.body;
+    const fileUrl =
+      req.file && req.file.location
+        ? req.file.location
+        : "파일을 업로드하지 않았습니다."; // S3에 업로드 된 이미지 URL
 
     // 1. 이메일 유효성 검사
     if (validEmailCheck(email) == false) {
@@ -69,6 +75,7 @@ export const registUser = async (req, res, next) => {
     const newUser = new User({
       email,
       name,
+      profile_image: fileUrl,
       nickname,
       phone,
       birth,
@@ -129,16 +136,134 @@ export const regenerateToken = async (req, res, next) => {
   }
 };
 
-// 프로필 조회
+/*
+ * API No. 4
+ * API Name : 로그아웃 API
+ * [POST] /auth/logout
+ */
+export const logout = async (req, res, next) => {
+  const { _id, email } = req.user;
+
+  try {
+    const user = await User.findOne({ _id });
+    const result = await removeRefreshToken(user);
+
+    return res.send(response(status.SUCCESS, result));
+  } catch (error) {
+    console.error(error);
+    return res.send(errResponse(status.INTERNAL_SERVER_ERROR));
+  }
+};
+
+/*
+ * API No. 5
+ * API Name : 회원 탈퇴 API
+ * [PATCH] /auth/withdrawUser
+ */
+export const withdrawUser = async (req, res, next) => {
+  const { _id, email } = req.user;
+
+  try {
+    await User.findOneAndUpdate(
+      { email: email },
+      { $set: { status: "inactive" } }
+    );
+
+    return res.send(response(status.SUCCESS));
+  } catch (error) {
+    console.error(error);
+    return res.send(errResponse(status.INTERNAL_SERVER_ERROR));
+  }
+};
+
+/*
+ * API No. 6
+ * API Name : 프로필 조회
+ * [GET] /auth/profile
+ */
 export const getUserInfo = async (req, res, next) => {
   const { _id, email } = req.user;
 
   try {
     const user = await User.findOne({ email });
+
     return res.send(response(status.SUCCESS, user));
   } catch (error) {
     console.error(error);
-    return new BaseError(status.INTERNAL_SERVER_ERROR);
+    return res.send(errResponse(status.INTERNAL_SERVER_ERROR));
+  }
+};
+
+/*
+ * API No. 7
+ * API Name : 프로필 수정
+ * [PATCH] /auth/update
+ */
+export const updateUserInfo = async (req, res, next) => {
+  const { _id, email } = req.user;
+  const { nickname, phone, profile_image, password } = req.body;
+  const fileUrl =
+    req.file && req.file.location
+      ? req.file.location
+      : "파일을 업로드하지 않았습니다."; // S3에 업로드 된 이미지 URL
+
+  try {
+    // nickname 수정 시, nickname 중복 확인
+    if (nickname) {
+      const existUser = await User.findOne({ nickname });
+      if (existUser) {
+        return res.send(errResponse(status.NICKNAME_ALREADY_EXIST));
+      }
+    }
+
+    // phone 수정 시, phone 유효성 검사
+    if (phone) {
+      if (validCallNumberCheck(phone) == false) {
+        return res.send(
+          customErrResponse(
+            status.BAD_REQUEST,
+            "올바른 핸드폰 번호를 입력해주세요."
+          )
+        );
+      }
+    }
+
+    // password 수정 시, password 유효성 검사 & 암호화
+    if (password) {
+      if (validPasswordCheck(password) == false) {
+        return res.send(
+          customErrResponse(
+            status.BAD_REQUEST,
+            "올바른 비밀번호 형식을 지켜주세요."
+          )
+        );
+      }
+      const hashedPassword = await bcrypt.hash(password, 10);
+    }
+
+    // S3 업로드 된 이미지 삭제
+    const findUser = await User.findOne({ email });
+    const fileKey = findUser.profile_image;
+    await deleteImage(fileKey);
+    console.log("이미지 삭제 성공");
+
+    const updateUser = await User.findOneAndUpdate(
+      { email: email },
+      {
+        $set: {
+          nickname: nickname,
+          phone: phone,
+          profile_image: fileUrl,
+          password: password,
+        },
+      },
+      { new: true }
+    );
+
+    return res.send(response(status.SUCCESS, updateUser));
+  } catch (error) {
+    console.log(error);
+    return res.send(errResponse(status.INTERNAL_SERVER_ERROR));
   }
 };
 

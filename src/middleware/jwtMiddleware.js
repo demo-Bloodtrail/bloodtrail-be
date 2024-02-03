@@ -71,3 +71,11 @@ export const verifyRefreshToken = (token, userId) => {
     });
   });
 };
+
+// refresh token 삭제
+export const removeRefreshToken = (user) => {
+  return new Promise((resolve, reject) => {
+    const result = redisClient.del(user._id.toString());
+    resolve(result);
+  });
+};

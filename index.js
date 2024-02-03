@@ -3,14 +3,21 @@ import { specs } from "./swagger/swagger.js";
 import SwaggerUi from "swagger-ui-express";
 import dotenv from "dotenv";
 import cors from "cors";
+import path from "path";
 
 import { connect } from "./src/config/database.js";
+import socketConnect from "./src/config/socket.js";
 import { response, errResponse } from "./src/config/response.js";
 import { status } from "./src/config/responseStatus.js";
 import { healthRouter } from "./src/router/healthRouter.js";
 import { authRouter } from "./src/router/authRouter.js";
 import { imageRouter } from "./src/router/imageRouter.js";
-import { postRouter } from './src/router/postRouter.js'; // Goosmos
+import { postRouter } from "./src/router/postRouter.js"; // Goosmos
+import { bloodRouter } from "./src/router/bloodRouter.js";
+import { historyRouter } from "./src/router/historyRouter.js";
+import { crewRouter } from "./src/router/crewRouter.js";
+import { reportRouter } from "./src/router/reportRouter.js";
+import { chatRoomRouter } from "./src/router/chatRoomRouter.js";
 
 dotenv.config(); // .env 파일 사용 (환경 변수 관리)
 
@@ -28,8 +35,17 @@ app.use(express.urlencoded({ extended: false })); // 단순 객체 문자열 형
 app.use("/api-docs", SwaggerUi.serve, SwaggerUi.setup(specs)); // swagger
 app.use("/health", healthRouter); // health check
 app.use("/auth", authRouter); // auth
-app.use("/s3", imageRouter);
+app.use("/s3", imageRouter); // image
 app.use("/post", postRouter); // post
+app.use("/", reportRouter); // report
+app.use("/blood", bloodRouter); // blood
+app.use("/history", historyRouter); // history
+app.use("/crew", crewRouter); // crew
+app.use("/chatRoom", chatRoomRouter); // chatRoom
+
+app.set("view engine", "ejs"); // 뷰 엔진을 EJS로 설정
+app.use(express.static(path.join(__dirname, "src", "public")));
+app.set("views", __dirname + "/src/view");
 
 app.get("/", (req, res, next) => {
   res.send(response(status.SUCCESS, "루트 페이지!"));
@@ -51,8 +67,9 @@ app.use((err, req, res, next) => {
     .send(response(err.data));
 });
 
-app.listen(app.get("port"), () => {
+const server = app.listen(app.get("port"), () => {
   console.log(`Example app listening on port ${app.get("port")}`);
   console.log(`Now env ` + process.env.NODE_ENV);
   console.log(`Now REDIS_HOST ` + process.env.REDIS_HOST);
 });
+socketConnect(server, app); // socket.io 연결

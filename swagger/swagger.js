@@ -2,15 +2,16 @@ import SwaggerJsdoc from "swagger-jsdoc";
 
 const options = {
   definition: {
+    openapi: "3.0.0",
     info: {
-      title: "UMC Study API",
+      title: "BloodTrail API Docs",
       version: "1.0.0",
-      description: "UMC Study API with express, API 설명",
+      description: "BloodTrail Server API 명세서",
     },
     host: "localhost:3000",
     basepath: "../",
   },
-  apis: ["./src/router/*.js", "./swagger/*"],
+  apis: ["../router/*.js", "./swagger/*"],
 };
 
 export const specs = SwaggerJsdoc(options);
