@@ -52,7 +52,7 @@ export const createCrew = async(req, res, next) => {
         console.log(err);
         return res.send(errResponse(status.INTERNAL_SERVER_ERROR));
     }
-}
+};
 
 /*
  * API No. 2
@@ -82,7 +82,7 @@ export const checkName = async(req, res, next) => {
         console.log(err);
         return res.send(errResponse(status.INTERNAL_SERVER_ERROR));
     }
-}
+};
 
 /*
  * API No. 3
@@ -117,7 +117,7 @@ export const getAllCrew = async(req, res, next) => {
         console.log(err);
         return res.send(errResponse(status.INTERNAL_SERVER_ERROR));
     }
-}
+};
 
 /*
  * API No. 4
@@ -156,7 +156,7 @@ export const getCrew = async(req, res, next) => {
         console.log(err);
         return res.send(errResponse(status.INTERNAL_SERVER_ERROR));
     }
-}
+};
 
 /*
  * API No. 5
@@ -203,4 +203,152 @@ export const joinCrew = async(req, res, next) => {
         console.log(err);
         return res.send(errResponse(status.INTERNAL_SERVER_ERROR));
     }
-}
+};
+
+/*
+ * API No. 6
+ * API Name : 나의 크루 조회 API
+ * [GET] /crew/mycrew
+ */
+export const getMyCrew = async(req, res, next) => {
+    const { _id, email } = req.user;
+
+    try {
+        const user = await User.findById(_id);
+
+        if (!user.crew) {
+            return res.send(errResponse(status.CREW_NOT_JOIN));
+        }
+
+        const crew = await Crew.findById(user.crew)
+            .populate({
+                path: "crew_leader",
+                select: "profile_image"
+            });
+
+        return res.send(response(status.SUCCESS, crew));
+    } catch (err) {
+        console.log(err);
+        return res.send(errResponse(status.INTERNAL_SERVER_ERROR));
+    }
+};
+
+/*
+ * API No. 7
+ * API Name : 헌혈 크루 순위 조회 API
+ * [GET] /crew/rank
+ */
+export const getRankCrew = async(req, res, next) => {
+    const { _id, email } = req.user;
+    const page = req.query.page || 1;
+    const perPage = 6;
+
+    try {
+        const crewList = await Crew.find()
+            .sort({ now : -1 }) // 포인트 순
+            .skip((page - 1) * perPage)
+            .limit(perPage)
+            .populate(
+                {
+                    path: "crew_leader",
+                    select: "profile_image",
+                }
+            );
+
+        const result = {
+            crewList: crewList,
+            currentPage: parseInt(page),
+            totalPage: Math.ceil(crewList.length / 6),
+        };
+    
+        return res.send(response(status.SUCCESS, result));
+    } catch (err) {
+        console.log(err);
+        return res.send(errResponse(status.INTERNAL_SERVER_ERROR));
+    }
+};
+
+/*
+ * API No. 8
+ * API Name : 크루 검색 API
+ * [GET] /crew/search
+ */
+export const findCrew = async(req, res, next) => {
+    const { _id, email } = req.user;
+    const keyword = req.query.keyword;
+
+    try {
+        // 유효성 검사
+        if (!keyword || keyword === ' ') {
+            return res.send(errResponse(status.CREW_NOT_KEYWORD));
+        }
+
+        const regex = new RegExp(keyword, "i"); // 대소문자 구분 X
+
+        const crewList = await Crew.find({ crew_name: { $regex: regex } })
+            .populate({
+                path: "crew_leader",
+                select: "profile_image",
+            });
+
+        return res.send(response(status.SUCCESS, crewList));
+    } catch (err) {
+        console.log(err);
+        return res.send(errResponse(status.INTERNAL_SERVER_ERROR));
+    }
+};
+
+/*
+ * API No. 9
+ * API Name : 크루 탈퇴 API
+ * [PATCH] /crew/:crewId
+ */
+export const withdrawCrew = async(req, res, next) => {
+    const crewId = req.params.crewId;
+    const { _id, email } = req.user;
+
+    try {
+        const crew = await Crew.findById(crewId);
+
+        // 크루 리더인지 크루 멤버인지 확인
+        const isLeader = crew.crew_leader.equals(_id);
+
+        // 크루 멤버의 인덱스
+        const index = crew.crew_member.indexOf(_id);
+
+        // 사용자 정보 수정
+        const member = await User.findById(_id);
+        member.crew = null;
+
+        await member.save();
+
+        // 크루 리더일 경우
+        if (isLeader) {
+            if (crew.crew_member.length > 1) { // 크루에 다른 크루 멤버가 존재할 경우
+                const newLeader = crew.crew_member[1];
+                crew.crew_leader = newLeader;
+            } else { // 크루에 다른 크루 멤버가 존재하지 않을 경우
+                await Crew.findByIdAndDelete(crewId);
+                return res.send(response(status.SUCCESS, "크루가 삭제되었습니다."));
+            }
+        }
+
+        // 크루 정보 수정
+        const point = member.point;
+        const [existingPoint, existingRate] = crew.now;
+
+        const updatedPoint = existingPoint - point;
+        const updatedRate = (updatedPoint / crew.goal[0]) * 100;
+
+        crew.crew_member.splice(index, 1);
+        crew.crew_count -= 1;
+        crew.now = [updatedPoint, updatedRate];
+
+        await crew.save();
+
+        return res.send(response(status.SUCCESS, crew));
+    } catch (err) {
+        console.log(err);
+        return res.send(errResponse(status.INTERNAL_SERVER_ERROR));
+    }
+};

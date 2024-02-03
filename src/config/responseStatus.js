@@ -112,7 +112,19 @@ export const status = {
   CREW_NOT_FOUND: {
       status: StatusCodes.BAD_REQUEST,
       isSuccess: false,
-      code: "CREW4002",
+      code: "CREW4003",
       message: "해당 크루 정보를 찾을 수 없습니다.",
+  },
+  CREW_NOT_JOIN: {
+      status: StatusCodes.BAD_REQUEST,
+      isSuccess: false,
+      code: "CREW4004",
+      message: "가입된 크루가 없습니다.",
+  },
+  CREW_NOT_KEYWORD: {
+      status: StatusCodes.BAD_REQUEST,
+      isSuccess: false,
+      code: "CREW4005",
+      message: "검색어를 입력해주세요.",
   },
 };
