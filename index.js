@@ -6,7 +6,7 @@ import cors from "cors";
 import path from "path";
 
 import { connect } from "./src/config/database.js";
-import { socketConnect } from "./src/config/socket.js";
+import socketConnect from "./src/config/socket.js";
 import { response, errResponse } from "./src/config/response.js";
 import { status } from "./src/config/responseStatus.js";
 import { healthRouter } from "./src/router/healthRouter.js";
@@ -23,7 +23,6 @@ dotenv.config(); // .env 파일 사용 (환경 변수 관리)
 
 const app = express();
 connect(); // mongodb 연결
-socketConnect(server, app); // socket.io 연결
 
 // server setting - view, static, body-parser etc..
 app.set("port", process.env.PORT || 3000); // 서버 포트 지정
@@ -68,8 +67,9 @@ app.use((err, req, res, next) => {
     .send(response(err.data));
 });
 
-app.listen(app.get("port"), () => {
+const server = app.listen(app.get("port"), () => {
   console.log(`Example app listening on port ${app.get("port")}`);
   console.log(`Now env ` + process.env.NODE_ENV);
   console.log(`Now REDIS_HOST ` + process.env.REDIS_HOST);
 });
+socketConnect(server, app); // socket.io 연결
