@@ -3,22 +3,34 @@ const Schema = mongoose.Schema;
 const { Types: { ObjectId } } = Schema;
 
 const ReportSchema = new Schema({
-    type: {
-        type: (String, ObjectId),
-        required: true,
-    },
     claim_info: {
-        type: (['UNHEALTHY', 'FINANCE', 'FRAUD', 'ABUSE', 'ETC'], ObjectId),
-        required: true,
+        target: {
+            type: String,
+            required: true,
+        },
+        reason: {
+            type: String,
+            required: true,
+        }
+    },
+    post_id: {
+        type: ObjectId,
+        unique: false,
+        ref: 'Post'
+    },
+    comment_id: {
+        type: ObjectId,
+        unique: false,
+        ref: 'Comment'
     },
     claimer: {
         type: ObjectId,
         required: true,
+        unique: false,
         ref: 'User',
     },
     created_at: {
         type: Date,
-        required: true,
         defualt: Date.now,
     },
 }, { versionKey: false } // 데이터 삽입 시 __v 칼럼 생성 X
