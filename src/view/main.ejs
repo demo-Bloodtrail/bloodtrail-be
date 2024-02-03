@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="stylesheet" href="/main.css" />
+    <title><%= title %></title>
+  </head>
+  <body>
+    <h1>채팅방</h1>
+    <fieldset>
+      <legend>채팅방 목록</legend>
+      <table>
+        <thead>
+          <tr>
+            <th>방 제목</th>
+            <th>종류</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% chatRooms.forEach(function(room) { %>
+          <tr data-id="<%= room._id %>">
+            <td><%= room.title %></td>
+            <td><%= room.type %></td>
+            <td>
+              <button data-id="<%= room._id %>" class="join-btn">입장</button>
+            </td>
+          </tr>
+          <% }); %>
+        </tbody>
+      </table>
+      <input
+        type="text"
+        id="token"
+        name="token"
+        placeholder="채팅방 입장하고 싶으면 액세스 토큰 넣어"
+      />
+      <a href="/chatRoom">채팅방 생성</a>
+    </fieldset>
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+      const socket = io.connect("http://localhost:3000/chatRoom", {
+        // 네임스페이스
+        path: "/socket.io",
+      });
+
+      socket.on("newRoom", function (data) {
+        // 새 방 이벤트 시 새 방 생성
+        const tr = document.createElement("tr");
+        let td = document.createElement("td");
+        td.textContent = data.title;
+        tr.appendChild(td);
+        td = document.createElement("td");
+        td.style.color = data.joiner;
+        td.textContent = data.joiner;
+        tr.appendChild(td);
+        td = document.createElement("td");
+        const button = document.createElement("button");
+        button.textContent = "입장";
+
+        button.dataset.id = data._id;
+        button.addEventListener("click", addBtnEvent);
+        td.appendChild(button);
+        tr.appendChild(td);
+        tr.dataset.id = data._id;
+        document.querySelector("table tbody").appendChild(tr); // 화면에 추가
+      });
+
+      socket.on("removeRoom", function (data) {
+        // 방 제거 이벤트 시 id가 일치하는 방 제거
+        document.querySelectorAll("tbody tr").forEach(function (tr) {
+          if (tr.dataset.id === data) {
+            tr.parentNode.removeChild(tr);
+          }
+        });
+      });
+
+      function addBtnEvent(e) {
+        // 방 입장 클릭 시
+        const token = document.getElementById("token").value;
+        console.log("token: " + token);
+        const url = "/chatRoom/" + e.target.dataset.id;
+
+        axios
+          .get(url, {
+            headers: {
+              Authorization: `Bearer ` + token,
+            },
+          })
+          .then((response) => {
+            // 받아온 HTML을 body에 직접 추가
+            // 받은 HTML로 현재 페이지를 교체
+            document.open();
+            document.write(response.data);
+            document.close();
+
+            // URI 변경
+            const newUrl = "/chatRoom/" + e.target.dataset.id;
+            window.history.pushState({}, "", newUrl);
+          })
+          .catch((error) => {
+            // 에러가 발생하면 콘솔에 출력하거나 다른 방식으로 처리
+            console.error(error);
+          });
+      }
+
+      document.querySelectorAll(".join-btn").forEach(function (btn) {
+        btn.addEventListener("click", addBtnEvent);
+      });
+    </script>
+    <script>
+      window.onload = () => {
+        if (new URL(location.href).searchParams.get("error")) {
+          alert(new URL(location.href).searchParams.get("error"));
+        }
+      };
+    </script>
+  </body>
+</html>
