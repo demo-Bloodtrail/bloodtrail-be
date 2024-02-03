@@ -1,9 +1,6 @@
 import mongoose from 'mongoose';
-// import User from '../schemas/users.js';
 const Schema = mongoose.Schema;
 const { Types: { ObjectId } } = Schema;
-
-var PostType = ['FREE', 'HONOR', 'CERTIFIY', 'INFO'];
 
 const PostSchema = new Schema({
     writer: {
@@ -23,12 +20,17 @@ const PostSchema = new Schema({
         required: true,
     },
     image: {
-        type: String, // S3 upload url
+        type: [String], // S3 upload url
     },
     types: {
         type: String,
         required: true,
     },
+    like_users: [{ 
+        type: ObjectId,
+        default: [],
+        ref: "User",
+    }],
     likes: {
         type: Number,
         default: 0,

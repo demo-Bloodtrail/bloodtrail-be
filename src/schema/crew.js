@@ -10,10 +10,10 @@ const crewSchema = new Schema({
     },
     crew_image: {
         type: String,
-        required: true,
     },
     crew_leader: {
-        type: String,
+        type: ObjectId,
+        ref: 'User',
         required: true,
     },
     crew_member: {
@@ -21,19 +21,23 @@ const crewSchema = new Schema({
         ref: 'User',
         required: true,
     },
-    crew_count: {
+    crew_count: { // 크루 인원수
         type: Number,
         required: true,
         default: 1,
     },
-    // 목표 헌혈 포인트
+    // 목표 헌혈 포인트 & 참여율
     goal: {
         type: [Number], // (Number, Number)
         required: true,
     },
-    // 현재 헌혈 포인트
+    // 현재 헌혈 포인트 & 참여율
     now: {
         type: [Number], // (Number, Number)
+        required: true,
+    },
+    description: {
+        type: String,
         required: true,
     },
     created_at: {

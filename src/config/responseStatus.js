@@ -95,4 +95,36 @@ export const status = {
     code: "HISTORY4001",
     message: "해당 헌혈 정보를 찾을 수 없습니다.",
   },
+
+  // crew err
+  CREW_ALREADY_JOIN: {
+    status: StatusCodes.BAD_REQUEST,
+    isSuccess: false,
+    code: "CREW4001",
+    message: "이미 크루에 가입했습니다."
+  },
+  CREW_NAME_ALREADY_EXIST: {
+    status: StatusCodes.BAD_REQUEST,
+    isSuccess: false,
+    code: "CREW4002",
+    message: "크루 이름이 이미 존재합니다."
+  },
+  CREW_NOT_FOUND: {
+      status: StatusCodes.BAD_REQUEST,
+      isSuccess: false,
+      code: "CREW4003",
+      message: "해당 크루 정보를 찾을 수 없습니다.",
+  },
+  CREW_NOT_JOIN: {
+      status: StatusCodes.BAD_REQUEST,
+      isSuccess: false,
+      code: "CREW4004",
+      message: "가입된 크루가 없습니다.",
+  },
+  CREW_NOT_KEYWORD: {
+      status: StatusCodes.BAD_REQUEST,
+      isSuccess: false,
+      code: "CREW4005",
+      message: "검색어를 입력해주세요.",
+  },
 };
