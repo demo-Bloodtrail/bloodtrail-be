@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="stylesheet" href="/main.css" />
+    <title><%= title %></title>
+  </head>
+  <body>
+    <h1><%= title %></h1>
+    <a href="/" id="exit-btn">방 나가기</a>
+    <fieldset>
+      <legend>채팅 내용</legend>
+      <div id="chat-list">
+        <% chats.forEach(function(chat) { %> <% if (chat.writer.nickname ===
+        nickname) { %>
+        <div class="mine" style="color: <%= chat.writer.nickname %>">
+          <div><%= chat.writer.nickname %></div>
+          <% if (chat.image) { %>
+          <img src="<%= chat.image %>" />
+          <% } else { %>
+          <div><%= chat.message %></div>
+          <% } %>
+        </div>
+        <% } else if (chat.writer.nickname === 'system') { %>
+        <div class="system">
+          <div><%= chat.message %></div>
+        </div>
+        <% } else { %>
+        <div class="other" style="color: <%= chat.writer.nickname %>">
+          <div><%= chat.writer.nickname %></div>
+          <% if (chat.image) { %>
+          <img src="<%= chat.image %>" />
+          <% } else { %>
+          <div><%= chat.message %></div>
+          <% } %>
+        </div>
+        <% } %> <% }); %>
+      </div>
+    </fieldset>
+
+    <form id="chat-form">
+      <label for="nickname">닉네임</label>
+      <input type="text" id="nickname" name="nickname" required />
+      <label for="token">액세스 토큰</label>
+      <input type="text" id="token" name="token" required />
+      <label for="message">채팅 메시지 작성</label>
+      <input type="text" id="message" name="message" />
+      <button type="submit">전송</button>
+    </form>
+
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        const socket = io.connect("http://localhost:3000/chat", {
+          path: "/socket.io",
+        });
+
+        const nickname = document.getElementById("nickname").value;
+        const chatRoomId = new URL(location).pathname.split("/").at(-1);
+
+        // 채팅방 입장 후 송신
+        socket.emit("join", {
+          nickname: "<%= nickname %>",
+          chatRoomId: "<%= chatRoom._id %>",
+        });
+
+        // 채팅방 입장 후 시스템 메시지 수신
+        socket.on("join", function (data) {
+          const div = document.createElement("div");
+          div.classList.add("system");
+          const message = document.createElement("div");
+          message.textContent = data.message;
+          div.appendChild(message);
+          document.querySelector("#chat-list").appendChild(div);
+        });
+
+        // 채팅방 퇴장 후 시스템 메시지 수신
+        socket.on("exit", function (data) {
+          const div = document.createElement("div");
+          div.classList.add("system");
+          const message = document.createElement("div");
+          message.textContent = data.message;
+          div.appendChild(message);
+          document.querySelector("#chat-list").appendChild(div);
+        });
+
+        // 채팅방 메시지 송신
+        socket.on("chat", function (data) {
+          console.log("data.nickname " + data.writer.nickname);
+
+          const div = document.createElement("div");
+          if (data.writer.nickname === "<%= nickname %>") {
+            div.classList.add("mine");
+          } else {
+            div.classList.add("other");
+          }
+          const name = document.createElement("div");
+          name.textContent = data.writer.nickname;
+          div.appendChild(name);
+          if (data.message) {
+            const message = document.createElement("div");
+            message.textContent = data.message;
+            div.appendChild(message);
+          }
+          div.style.color = data.writer.nickname;
+          document.querySelector("#chat-list").appendChild(div);
+        });
+
+        document
+          .querySelector("#chat-form")
+          .addEventListener("submit", function (e) {
+            e.preventDefault();
+            if (e.target.message.value) {
+              axios
+                .post(
+                  "/chatRoom/<%= chatRoom._id %>/chat",
+                  {
+                    message: this.message.value,
+                  },
+                  {
+                    headers: {
+                      Authorization: `Bearer ` + this.token.value,
+                    },
+                  }
+                )
+                .then(() => {
+                  e.target.message.value = "";
+                })
+                .catch((err) => {
+                  console.error(err);
+                });
+            }
+          });
+      });
+    </script>
+  </body>
+</html>

@@ -3,8 +3,10 @@ import { specs } from "./swagger/swagger.js";
 import SwaggerUi from "swagger-ui-express";
 import dotenv from "dotenv";
 import cors from "cors";
+import path from "path";
 
 import { connect } from "./src/config/database.js";
+import { socketConnect } from "./src/config/socket.js";
 import { response, errResponse } from "./src/config/response.js";
 import { status } from "./src/config/responseStatus.js";
 import { healthRouter } from "./src/router/healthRouter.js";
@@ -15,11 +17,13 @@ import { bloodRouter } from "./src/router/bloodRouter.js";
 import { historyRouter } from "./src/router/historyRouter.js";
 import { crewRouter } from "./src/router/crewRouter.js";
 import { reportRouter } from "./src/router/reportRouter.js";
+import { chatRoomRouter } from "./src/router/chatRoomRouter.js";
 
 dotenv.config(); // .env 파일 사용 (환경 변수 관리)
 
 const app = express();
 connect(); // mongodb 연결
+socketConnect(server, app); // socket.io 연결
 
 // server setting - view, static, body-parser etc..
 app.set("port", process.env.PORT || 3000); // 서버 포트 지정
@@ -38,6 +42,11 @@ app.use("/", reportRouter); // report
 app.use("/blood", bloodRouter); // blood
 app.use("/history", historyRouter); // history
 app.use("/crew", crewRouter); // crew
+app.use("/chatRoom", chatRoomRouter); // chatRoom
+
+app.set("view engine", "ejs"); // 뷰 엔진을 EJS로 설정
+app.use(express.static(path.join(__dirname, "src", "public")));
+app.set("views", __dirname + "/src/view");
 
 app.get("/", (req, res, next) => {
   res.send(response(status.SUCCESS, "루트 페이지!"));
