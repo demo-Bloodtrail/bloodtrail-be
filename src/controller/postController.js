@@ -214,3 +214,24 @@ export const getHomePosts = async (req, res, next) => {
         return res.send(errResponse(status.INTERNAL_SERVER_ERROR));
     }
 }
+
+
+
+export const findPost = async (req, res, next) => {
+    try {
+        const findType = req.query.type;
+        const keyword = req.body.keyword;
+        let posts;
+        if (findType === 'title') {
+            posts = await Post.find({ title: { $regex: keyword, $options: 'i' } }, 
+            { title: true, writer: true, created_at: true, watch_count: true, likes: true });
+        }
+        else{
+            posts = await Post.find({ 'writer.nickname': { $regex: keyword, $options: 'i' } },
+            { title: true, writer: true, created_at: true, watch_count: true, likes: true });
+        }
+        return res.send(response(status.SUCCESS, posts));
+    } catch ( error ) {
+        return res.send(errResponse(status.INTERNAL_SERVER_ERROR));
+    }
+}
