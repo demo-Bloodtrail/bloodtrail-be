@@ -52,24 +52,27 @@ export const generateRefreshToken = (user) => {
 };
 
 // refresh token 검증
-export const verifyRefreshToken = (token, userId) => {
-  return new Promise((resolve, reject) => {
-    redisClient.get(userId.toString(), (err, data) => {
-      if (err) {
-        console.log("레디스랑 연결해서 get했는데 err낫음");
-        reject(errResponse(status.UNAUTHORIZED));
-      } else if (token === data) {
-        // 리프레시 토큰과 Redis에 저장된 토큰의 일치 여부 검사
-        console.log("리프레시랑 레디스 토큰 일치 여부 검사");
-        const decoded = jwt.verify(token, secret);
-        console.log("일치함");
-        resolve(decoded.email);
-      } else {
-        console.log("Invalid Refresh Token");
-        reject(errResponse(status.UNAUTHORIZED));
-      }
-    });
-  });
+export const verifyRefreshToken = async (token, userId, res) => {
+  try {
+    const refreshToken = await redisClient.get(userId);
+
+    if (token !== refreshToken)
+      return res.send(errResponse(status.UNAUTHORIZED));
+  } catch (err) {
+    console.log(err);
+    return res.send(errResponse(status.UNAUTHORIZED));
+  }
+
+  try {
+    console.log("리프레시 토큰과 레디스 토큰 일치");
+    const decoded = jwt.verify(token, secret);
+    console.log("리프레시 디코딩 완료");
+    return decoded.email;
+  } catch (err) {
+    console.log("jwt expired");
+    const message = "jwt expired";
+    return message;
+  }
 };
 
 // refresh token 삭제

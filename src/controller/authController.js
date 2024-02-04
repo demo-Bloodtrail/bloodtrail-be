@@ -108,6 +108,16 @@ export const login = async (req, res, next) => {
       return res.send(errResponse(status.MEMBER_NOT_FOUND));
     }
 
+    // 휴면 계정 or 5번 이상 신고 당한 계정
+    if (user.status === "inactive") {
+      return res.send(
+        customErrResponse(
+          status.BAD_REQUEST,
+          "로그인할 수 없습니다. 서버에 문의해주세요."
+        )
+      );
+    }
+
     const accessToken = generateAccessToken(user);
     const refreshToken = generateRefreshToken(user);
 
@@ -247,12 +257,15 @@ export const updateUserInfo = async (req, res, next) => {
     // S3 업로드 된 이미지 삭제
     const findUser = await User.findOne({ email });
 
-    if (findUser.profile_image && findUser.profile_image !== "파일을 업로드하지 않았습니다.") {
+    if (
+      findUser.profile_image &&
+      findUser.profile_image !== "파일을 업로드하지 않았습니다."
+    ) {
       const fileKey = findUser.profile_image;
       await deleteImage(fileKey);
       console.log("이미지 삭제 성공");
     }
-    
+
     const updateUser = await User.findOneAndUpdate(
       { email: email },
       {
@@ -278,21 +291,26 @@ export const updateUserInfo = async (req, res, next) => {
  * API Name : 이메일 인증 API
  * [POST] /auth/check-email
  */
-export const checkEmail = async(req, res, next) => {
+export const checkEmail = async (req, res, next) => {
   const { email } = req.body;
   const code = generateRandomCode();
 
   try {
     // 이메일 유효성 검사
     if (validEmailCheck(email) == false) {
-      return res.send(customErrResponse(status.BAD_REQUEST, "올바른 이메일 주소를 입력해주세요."));
+      return res.send(
+        customErrResponse(
+          status.BAD_REQUEST,
+          "올바른 이메일 주소를 입력해주세요."
+        )
+      );
     }
 
     const mailOptions = {
-      from : process.env.NODE_MAILER_ID,
-      to : email,
-      subject : "[Blood Trail] 이메일 인증 번호",
-      html : "<h1>인증번호를 입력해주세요</h1><br>" + code,
+      from: process.env.NODE_MAILER_ID,
+      to: email,
+      subject: "[Blood Trail] 이메일 인증 번호",
+      html: "<h1>인증번호를 입력해주세요</h1><br>" + code,
     };
 
     await smtpTransport.sendMail(mailOptions);
@@ -309,7 +327,7 @@ export const checkEmail = async(req, res, next) => {
  * API Name : 비밀번호 찾기 API
  * [PATCH] /auth/find-password
  */
-export const findPassword = async(req, res, next) => {
+export const findPassword = async (req, res, next) => {
   const { email } = req.body;
 
   try {
@@ -332,11 +350,12 @@ export const findPassword = async(req, res, next) => {
 
     // 새로운 비밀번호 전송
     const mailOptions = {
-      from : process.env.NODE_MAILER_ID,
-      to : email,
-      subject : "[Blood Trail] 비밀번호 찾기",
-      html : `<h1>새로운 비밀번호 안내</h1><p>새로운 비밀번호는 ${newPassword} 입니다.</p>`
-      + `<p>로그인 후 비밀번호를 변경해주세요.</p>`,
+      from: process.env.NODE_MAILER_ID,
+      to: email,
+      subject: "[Blood Trail] 비밀번호 찾기",
+      html:
+        `<h1>새로운 비밀번호 안내</h1><p>새로운 비밀번호는 ${newPassword} 입니다.</p>` +
+        `<p>로그인 후 비밀번호를 변경해주세요.</p>`,
     };
 
     await smtpTransport.sendMail(mailOptions);
@@ -378,9 +397,10 @@ export const generateRandomCode = () => {
 
 // 랜덤 패스워드 생성
 export const generateRandomPassword = () => {
-  const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ123456789";
+  const charset =
+    "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ123456789";
 
-  let password = '';
+  let password = "";
 
   password += getRandomChar("0123456789");
   password += getRandomChar("abcdefghijklmnopqrstuvwxyz");

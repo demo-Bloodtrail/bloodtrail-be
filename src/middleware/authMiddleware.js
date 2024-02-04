@@ -74,21 +74,15 @@ export const authenticateWithRefresh = async (req, res, next) => {
   }
 
   // 4. refresh token 유효성 검사
-  const result = verifyRefreshToken(refresh, decoded._id);
-
-  if (!result) {
-    if (result.message == "jwt expired") {
-      return next(
-        res.send(
-          customErrResponse(
-            status.UNAUTHORIZED,
-            "리프레시 토큰이 만료되었으니 다시 로그인해주세요."
-          )
-        )
-      );
-    }
-    const error = customErrResponse(status.UNAUTHORIZED, result.message);
-    return next(res.send(error));
+  const result = await verifyRefreshToken(refresh, decoded._id, res);
+  console.log("result: " + result);
+  if (result == "jwt expired") {
+    return res.send(
+      customErrResponse(
+        status.UNAUTHORIZED,
+        "리프레시 토큰이 만료되었으니 다시 로그인해주세요."
+      )
+    );
   }
 
   // 5. 유효성 검사 통과 후 요청에 사용자 정보 추가

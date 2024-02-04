@@ -151,7 +151,7 @@ export const patchBlood = async (req, res, next) => {
 /*
  * API No. 3
  * API Name : 지정헌혈글 전체 조회 API (9개씩 페이징 처리)
- * [GET] /blood/:page?type=type&product=product&filter=filter
+ * [GET] /blood/:page/all?type=type&product=product&filter=filter
  */
 export const getAllBloods = async (req, res, next) => {
   console.log("지정헌혈글 전체 조회 API 요청");
