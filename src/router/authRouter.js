@@ -7,6 +7,8 @@ import {
   logout,
   withdrawUser,
   updateUserInfo,
+  checkEmail,
+  findPassword,
 } from "../controller/authController";
 import {
   authenticateUser,
@@ -28,3 +30,5 @@ authRouter.patch(
   uploadOne.single("file"),
   updateUserInfo
 );
+authRouter.post("/check-email", checkEmail); // 이메일 인증
+authRouter.patch("/find-password", findPassword); // 비밀번호 찾기
