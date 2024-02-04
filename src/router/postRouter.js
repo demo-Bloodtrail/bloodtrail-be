@@ -1,13 +1,12 @@
 import express from 'express';
 import { checkPosting } from '../middleware/postMiddleware.js';
-import { viewPost, deletePost, amendPost  } from '../controller/postController.js';
+import { viewPost, deletePost, amendPost, getHomePosts } from '../controller/postController.js';
 import { checkPost } from '../middleware/postMiddleware.js';
 import { patchLike, deleteLike, postComment } from '../controller/commentController.js';
 import { authenticateUser } from '../middleware/authMiddleware.js';
 import { uploadSome } from "../middleware/imageMiddleware.js";
 
 export const postRouter = express.Router();
-
 
 // 게시판 조회하기
 postRouter.get('/', authenticateUser, checkPosting);
@@ -30,3 +29,7 @@ postRouter.patch('/:id/unlike', authenticateUser, deleteLike);
 
 // 댓글 작성하기 -> 에러 발생
 postRouter.post('/:id/comment', authenticateUser, postComment);
+
+export const homePostingRouter = express.Router();
+
+homePostingRouter.get('/', getHomePosts);

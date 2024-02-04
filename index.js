@@ -12,7 +12,7 @@ import { status } from "./src/config/responseStatus.js";
 import { healthRouter } from "./src/router/healthRouter.js";
 import { authRouter } from "./src/router/authRouter.js";
 import { imageRouter } from "./src/router/imageRouter.js";
-import { postRouter } from "./src/router/postRouter.js"; // Goosmos
+import { homePostingRouter, postRouter } from "./src/router/postRouter.js"; // Goosmos
 import { bloodRouter } from "./src/router/bloodRouter.js";
 import { historyRouter } from "./src/router/historyRouter.js";
 import { crewRouter } from "./src/router/crewRouter.js";
@@ -38,6 +38,7 @@ app.use("/auth", authRouter); // auth
 app.use("/s3", imageRouter); // image
 app.use("/post", postRouter); // post
 app.use("/", reportRouter); // report
+app.use("/home", homePostingRouter); // home free posting
 app.use("/blood", bloodRouter); // blood
 app.use("/history", historyRouter); // history
 app.use("/crew", crewRouter); // crew

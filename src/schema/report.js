@@ -23,9 +23,19 @@ const ReportSchema = new Schema({
         unique: false,
         ref: 'Comment'
     },
+    chat_id: {
+        type: ObjectId,
+        unique: false,
+        ref: 'Chat'
+    },
     claimer: {
         type: ObjectId,
         required: true,
+        unique: false,
+        ref: 'User',
+    },
+    target_user: {
+        type: ObjectId,
         unique: false,
         ref: 'User',
     },

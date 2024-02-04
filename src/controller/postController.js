@@ -47,19 +47,19 @@ export const getGalleryPosting = async (req, res, next) => {
         const sorttype = req.query.sorttype; // [created_at, likes]
 
         const bestPost = await Post.find({ types: posttype, likes: { $gte: 10 }, status: true }, {
-            writer: true, title: true, image: true, likes: true, watch_count: true, created_at: true })
+            writer: true, title: true, image: true, content: true, created_at: true })
         .sort({ likes: -1 }).limit(3); // 공감이 10개 이상인 게시글 중 상위 3개를 선택
 
         if (sorttype === 'created_at') { // 최신순 정렬
             const post = await Post.find({ types: posttype, status: true }, {
-                writer: true, title: true, image: true, likes: true, watch_count: true, created_at: true
+                writer: true, title: true, image: true, content: true, created_at: true
             }).sort({ created_at: -1 }).skip((page - 1) * perPage).limit(perPage); // sorttype 
             const Page = [bestPost, post];
             return res.send(response(status.SUCCESS, Page));
         }
         else { // 공감순 정렬
             const post = await Post.find({ types: posttype, status: true }, {
-                writer: true, title: true, image: true, likes: true, watch_count: true, created_at: true
+                writer: true, title: true, image: true, content: true, created_at: true
             }).sort({ likes: -1 }).skip((page - 1) * perPage).limit(perPage); // sorttype 
             const Page = [bestPost, post];
             return res.send(response(status.SUCCESS, Page));
@@ -79,9 +79,14 @@ export const viewPost = async (req, res, next) => {
 
         const commentList = await getPostComments(req, res, next); // 댓글 가져오기
 
-        // 추천 게시글 가져오기 -> 추가하기
+        // 추천 게시글 가져오기
+        const allPost = await Post.find({ types: post.types, status: true }).sort({ created_at: -1 });
+        const currentIndex = allPost.findIndex(p => p._id.toString() === postId);
+        const start = currentIndex - 7 < 0 ? 0 : currentIndex - 7;
+        const end = start + 15 > allPost.length ? allPost.length : start + 15;
+        const neighborPosts = allPost.slice(start, end);
 
-        return res.send(response(status.SUCCESS, [post, commentList]));
+        return res.send(response(status.SUCCESS, [post, commentList, neighborPosts]));
     } catch ( error ) {
         return res.send(errResponse(status.INTERNAL_SERVER_ERROR));
     }
@@ -111,6 +116,7 @@ export const deletePost = async(req, res, next) => {
 export const postNewPost = async (req, res, next) => {
     try {
         const { title, content, types } = req.body;
+        console.log(`${title} === ${content} === ${types}`);
         const { _id, email } = req.user;
         const writer = await User.findById(_id);
         const uploadedFiles = req.files;
@@ -196,5 +202,15 @@ export const amendPost = async (req, res, next) => {
         return res.send(response(status.SUCCESS, "글 수정하기 성공"));
     } catch ( error ) {
         res.send(errResponse(status.INTERNAL_SERVER_ERROR));
+    }
+}
+
+export const getHomePosts = async (req, res, next) => {
+    try {
+        const homePost = await Post.find({ types: 'FREE', status: true}, 
+        { writer: true, title: true, image: true, content: true, created_at: true }).sort({ likes: -1 }).limit(4);
+        return res.send(response(status.SUCCESS, homePost));
+    } catch ( error ) {
+        return res.send(errResponse(status.INTERNAL_SERVER_ERROR));
     }
 }
