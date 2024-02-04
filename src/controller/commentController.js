@@ -8,9 +8,14 @@ import { response, errResponse, customErrResponse } from "../config/response.js"
 export const postComment = async (req, res, next) => {
     try {
         const postId = req.params.id;
-        const { comment } = req.body; 
+        const comment = req.body.comment; 
         const { _id, email } = req.user; // body에서 가져오지 않고 댓글 내용과 작성자 저장하기
         const commenter = await User.findById(_id);
+
+        if (comment == "") {
+            const error = customErrResponse(status.BAD_REQUEST, "댓글을 작성해주세요.");
+            return next(res.send(error));
+        }
 
         const newComment = new Comment({
             post: postId,
@@ -20,9 +25,9 @@ export const postComment = async (req, res, next) => {
             },
             comment,
         });
-        console.log(newComment);
+
         await newComment.save();
-        return res.send(response(status.SUCCESS, "댓글 작성 성공"));
+        return res.send(response(status.SUCCESS, newComment));
     } catch ( error ) {
         return res.send(errResponse(status.INTERNAL_SERVER_ERROR))
     }
@@ -36,7 +41,8 @@ export const patchLike = async (req, res, next) => {
         const post = await Post.findById({ _id: postid });
 
         if (post.like_users.includes(_id)) { // 이미 좋아요를 누른 사람인 경우
-            return res.send(customErrResponse(status.BLOOD_ALREADY_LIKED, "이미 좋아요를 눌렀습니다."));
+            const error = customErrResponse(status.BLOOD_ALREADY_LIKED, "이미 좋아요를 눌렀습니다.");
+            return next(res.send(error));
         }
 
         post.like_users.push(_id); // 좋아요 목록에 추가
@@ -57,7 +63,8 @@ export const deleteLike = async (req, res, next) => {
         const post = await Post.findById({ _id: postid });
 
         if (!post.like_users.includes(_id)) { // 좋아요를 누르지 않은 사람인 경우
-            return res.send(customErrResponse(status.BLOOD_NOT_LIKED, "좋아요를 누르지 않았습니다."));
+            const error = customErrResponse(status.BLOOD_NOT_LIKED, "좋아요를 누르지 않았습니다.");
+            return next(res.send(error));
         }
 
         post.like_users.pop(_id);
@@ -70,13 +77,13 @@ export const deleteLike = async (req, res, next) => {
     }
 }
 
-// 게시글의 댓글을 가져오기
-export const getPostComments = async (req, res, next) => {
+// 게시글에 작성된 댓글 조회하기
+export const viewComment = async (req, res, next) => {
     try {
-        const id = req.params.id;
-        const commentsList = await Comment.find({ post: id, status: true }, { commenter: {nickname: true}, comment: true, created_at: true })
+        const allComments = await Comment.find({ post: req.params.id, status: true }, 
+            { 'commenter.nickname': true, comment: true, created_at: true })
         .sort({ created_at: -1 });
-        return commentsList;
+        return res.send(response(status.SUCCESS, allComments));
     } catch ( error ) {
         return res.send(errResponse(status.INTERNAL_SERVER_ERROR));
     }

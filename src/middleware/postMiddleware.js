@@ -61,7 +61,7 @@ export const checkPost = async (req, res, next) => {
         }
 
         if (!newPost.content) { // 내용 누락 검사
-            const error = customErrResponse(status.BAD_REQUEST, "제목을 작성해주세요.");
+            const error = customErrResponse(status.BAD_REQUEST, "내용을 작성해주세요.");
             return next(res.send(error));
         }
 
@@ -70,7 +70,7 @@ export const checkPost = async (req, res, next) => {
             const error = customErrResponse(status.BAD_REQUEST, "명예 사용자가 아닙니다.");
             return next(res.send(error));
         }
-        postNewPost(req, res, next);
+        next();
     } catch ( error ) {
         return res.send(errResponse(status.INTERNAL_SERVER_ERROR));
     }
