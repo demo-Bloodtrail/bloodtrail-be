@@ -202,7 +202,7 @@ export const getUserInfo = async (req, res, next) => {
  */
 export const updateUserInfo = async (req, res, next) => {
   const { _id, email } = req.user;
-  const { nickname, phone, profile_image, password } = req.body;
+  const { nickname, phone, password } = req.body;
   const fileUrl =
     req.file && req.file.location
       ? req.file.location
@@ -230,6 +230,8 @@ export const updateUserInfo = async (req, res, next) => {
     }
 
     // password 수정 시, password 유효성 검사 & 암호화
+    let hashedPassword;
+
     if (password) {
       if (validPasswordCheck(password) == false) {
         return res.send(
@@ -239,15 +241,18 @@ export const updateUserInfo = async (req, res, next) => {
           )
         );
       }
-      const hashedPassword = await bcrypt.hash(password, 10);
+      hashedPassword = await bcrypt.hash(password, 10);
     }
 
     // S3 업로드 된 이미지 삭제
     const findUser = await User.findOne({ email });
-    const fileKey = findUser.profile_image;
-    await deleteImage(fileKey);
-    console.log("이미지 삭제 성공");
 
+    if (findUser.profile_image && findUser.profile_image !== "파일을 업로드하지 않았습니다.") {
+      const fileKey = findUser.profile_image;
+      await deleteImage(fileKey);
+      console.log("이미지 삭제 성공");
+    }
+    
     const updateUser = await User.findOneAndUpdate(
       { email: email },
       {
@@ -255,7 +260,7 @@ export const updateUserInfo = async (req, res, next) => {
           nickname: nickname,
           phone: phone,
           profile_image: fileUrl,
-          password: password,
+          password: hashedPassword,
         },
       },
       { new: true }
