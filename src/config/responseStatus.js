@@ -61,6 +61,12 @@ export const status = {
     code: "MEMBER4003",
     message: "이미 존재하는 이메일입니다.",
   },
+  MAIL_SEND_FAIL: {
+    status: StatusCodes.BAD_REQUEST,
+    isSuccess: false,
+    code: "MEMBER4004",
+    message: "메일 전송에 실패했습니다.",
+  },
 
   // blood err
   BLOOD_NOT_FOUND: {
