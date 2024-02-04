@@ -9,7 +9,10 @@ const PostSchema = new Schema({
             required: true,
             ref: "User",
         },
-        nickname: String,
+        nickname: {
+            type: String,
+            required: true
+        }
     },
     title: {
         type: String,

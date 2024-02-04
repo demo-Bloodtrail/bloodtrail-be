@@ -1,10 +1,11 @@
-import { getLinePosting, getGalleryPosting, postNewPost } from "../controller/postController.js";
+import { getLinePosting, getGalleryPosting, postNewPost, findPost } from "../controller/postController.js";
 import { status } from "../config/responseStatus.js";
 import { response, errResponse, customErrResponse } from "../config/response.js";
 import User from '../schema/user.js';
 
 const POSTTYPE = ['FREE', 'HONOR', 'CERTIFY', 'INFO']; // 유효한 게시판
 const SORTTYPE = ['created_at', 'likes']; // 유효한 정렬 방식
+const FINDTYPE = ['title', 'writer']; // 유효한 검색 방식
 
 export const checkPosting = async (req, res, next) => {
     try {
@@ -70,6 +71,22 @@ export const checkPost = async (req, res, next) => {
             return next(res.send(error));
         }
         postNewPost(req, res, next);
+    } catch ( error ) {
+        return res.send(errResponse(status.INTERNAL_SERVER_ERROR));
+    }
+}
+
+export const checkFindPost = async (req, res, next) => {
+    try {
+        if (!FINDTYPE.includes(req.query.type)) {
+            const error = customErrResponse(status.BAD_REQUEST, "검색방식이 올바르지 않습니다.");
+            return next(res.send(error));
+        }
+        if (req.body.keyword === "") {
+            const error = customErrResponse(status.BAD_REQUEST, "검색 키워드가 올바르지 않습니다.");
+            return next(res.send(error));
+        }
+        findPost(req, res, next);
     } catch ( error ) {
         return res.send(errResponse(status.INTERNAL_SERVER_ERROR));
     }
