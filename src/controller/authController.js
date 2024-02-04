@@ -12,6 +12,7 @@ import {
   removeRefreshToken,
 } from "../middleware/jwtMiddleware.js";
 import { deleteImage } from "../middleware/imageMiddleware.js";
+import { smtpTransport } from "../config/email.js";
 
 /*
  * API No. 1
@@ -267,6 +268,81 @@ export const updateUserInfo = async (req, res, next) => {
   }
 };
 
+/*
+ * API No. 8
+ * API Name : 이메일 인증 API
+ * [POST] /auth/check-email
+ */
+export const checkEmail = async(req, res, next) => {
+  const { email } = req.body;
+  const code = generateRandomCode();
+
+  try {
+    // 이메일 유효성 검사
+    if (validEmailCheck(email) == false) {
+      return res.send(customErrResponse(status.BAD_REQUEST, "올바른 이메일 주소를 입력해주세요."));
+    }
+
+    const mailOptions = {
+      from : process.env.NODE_MAILER_ID,
+      to : email,
+      subject : "[Blood Trail] 이메일 인증 번호",
+      html : "<h1>인증번호를 입력해주세요</h1><br>" + code,
+    };
+
+    await smtpTransport.sendMail(mailOptions);
+
+    return res.send(response(status.SUCCESS));
+  } catch (err) {
+    console.log(err);
+    return res.send(errResponse(status.INTERNAL_SERVER_ERROR));
+  }
+};
+
+/*
+ * API No. 9
+ * API Name : 비밀번호 찾기 API
+ * [PATCH] /auth/find-password
+ */
+export const findPassword = async(req, res, next) => {
+  const { email } = req.body;
+
+  try {
+    // 이메일에 해당하는 사용자 검색
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      return res.send(errResponse(status.MEMBER_NOT_FOUND));
+    }
+
+    // 새로운 비밀번호 생성
+    const newPassword = generateRandomPassword();
+
+    // 비밀번호 암호화
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    // 사용자 정보 수정
+    user.password = hashedPassword;
+    await user.save();
+
+    // 새로운 비밀번호 전송
+    const mailOptions = {
+      from : process.env.NODE_MAILER_ID,
+      to : email,
+      subject : "[Blood Trail] 비밀번호 찾기",
+      html : `<h1>새로운 비밀번호 안내</h1><p>새로운 비밀번호는 ${newPassword} 입니다.</p>`
+      + `<p>로그인 후 비밀번호를 변경해주세요.</p>`,
+    };
+
+    await smtpTransport.sendMail(mailOptions);
+
+    return res.send(response(status.SUCCESS));
+  } catch (err) {
+    console.log(err);
+    return res.send(errResponse(status.INTERNAL_SERVER_ERROR));
+  }
+};
+
 /*************************************************************************************/
 // 이메일 유효성 검사
 export const validEmailCheck = (email) => {
@@ -287,4 +363,36 @@ export const validCallNumberCheck = (phone) => {
 export const validPasswordCheck = (password) => {
   const pattern = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{6,20}$/;
   return pattern.test(password);
+};
+
+// 랜덤 이메일 인증 번호 생성
+export const generateRandomCode = () => {
+  var code = Math.floor(Math.random() * (999999 - 100000 + 1)) + 100000;
+  return code;
+};
+
+// 랜덤 패스워드 생성
+export const generateRandomPassword = () => {
+  const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ123456789";
+
+  let password = '';
+
+  password += getRandomChar("0123456789");
+  password += getRandomChar("abcdefghijklmnopqrstuvwxyz");
+  password += getRandomChar("ABCDEFGHIJKLMNOPQRSTUVWXYZ");
+
+  const remainLength = Math.floor(Math.random() * (20 - password.length)) + 6;
+
+  for (let i = 0; i < remainLength; i++) {
+    const index = Math.floor(Math.random() * charset.length);
+    password += charset[index];
+  }
+
+  return password;
+};
+
+// 랜덤 문자열 선택
+export const getRandomChar = (charset) => {
+  const index = Math.floor(Math.random() * charset.length);
+  return charset[index];
 };
