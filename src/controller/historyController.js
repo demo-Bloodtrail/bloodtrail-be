@@ -6,6 +6,9 @@ import {
 } from "../config/response.js";
 import User from "../schema/user.js";
 import History from "../schema/history.js";
+import Crew from "../schema/crew.js";
+import { ImageAnnotatorClient } from "@google-cloud/vision";
+import { deleteImage } from "../middleware/imageMiddleware.js";
 
 /*
  * API No. 1
@@ -35,7 +38,25 @@ export const postHistory = async(req, res, next) => {
         }
 
         if (points > 0) {
+            // 사용자 포인트 수정
             await User.findByIdAndUpdate( _id, { $inc: { point: points } } );
+
+            // 사용자 정보
+            const user = await User.findById(_id);
+            const crew = await Crew.findById(user.crew);
+
+            // 사용자가 크루에 가입했을 경우, 크루 포인트와 참여율 수정
+            if (user.crew) {
+                const point = points; // 추가된 포인트
+                const [existingPoint, existingRate] = crew.now;
+
+                const updatedPoint = existingPoint + point; // 기존 crew point + 추가 point
+                const updatedRate = (updatedPoint / crew.goal[0]) * 100; // crew participation rate
+
+                crew.now = [updatedPoint, updatedRate];
+
+                await crew.save();
+            }
         }
 
         // 헌혈 정보 등록
@@ -59,7 +80,7 @@ export const postHistory = async(req, res, next) => {
 /*
  * API No. 2
  * API Name : 헌혈 정보 전체 조회 API (10개씩 페이징)
- * [GET] /history/:page
+ * [GET] /history
  */
 export const getAllHistories = async(req, res, next) => {
     const { _id, email } = req.user;
@@ -77,8 +98,6 @@ export const getAllHistories = async(req, res, next) => {
                     select: "name birth",
                 }
             );
-
-        console.log(historyList);
         
         const result = {
             historyList: historyList,
@@ -100,8 +119,6 @@ export const getAllHistories = async(req, res, next) => {
 export const getHistory = async(req, res, next) => {
     const historyId = req.params.historyId;
     const { _id, email } = req.user;
-
-    console.log(historyId);
     
     try {
         const history = await History.findById(historyId).populate({
@@ -142,10 +159,9 @@ export const updateHistory = async(req, res, next) => {
             return res.send(errResponse(status.HISTORY_NOT_FOUND));
         }
 
+        let points = 0;
         // 2. type이 변경된 경우 포인트 수정
         if (oldHistory.type !== type) {
-            let points = 0;
-
             if ((oldHistory.type === 'WB') && (type === 'PB' || type === 'PLB')) {
                 points = -2;
             } else if ((oldHistory.type === 'PB' || oldHistory.type === 'PLB') && type === 'WB') {
@@ -156,6 +172,23 @@ export const updateHistory = async(req, res, next) => {
                 _id,
                 { $inc: { point: points } }
             );
+        }
+
+        // 사용자 정보
+        const user = await User.findById(_id);
+        const crew = await Crew.findById(user.crew);
+
+        // 사용자가 크루에 가입했을 경우, 크루 포인트와 참여율 수정
+        if (user.crew) {
+            const point = points; // 수정된 포인트
+            const [existingPoint, existingRate] = crew.now;
+
+            const updatedPoint = existingPoint + point; // 기존 crew point + 수정된 point
+            const updatedRate = (updatedPoint / crew.goal[0]) * 100; // crew participation rate
+
+            crew.now = [updatedPoint, updatedRate];
+
+            await crew.save();
         }
 
         // 헌혈 정보 수정
@@ -202,10 +235,102 @@ export const deleteHistory = async(req, res, next) => {
             { $inc: { point: points } }
         );
 
+        // 사용자 정보
+        const user = await User.findById(_id);
+        const crew = await Crew.findById(user.crew);
+
+        // 사용자가 크루에 가입했을 경우, 크루 포인트와 참여율 수정
+        if (user.crew) {
+            const point = points; // 수정된 포인트
+            const [existingPoint, existingRate] = crew.now;
+
+            const updatedPoint = existingPoint + point; // 기존 crew point + 수정된 point
+            const updatedRate = (updatedPoint / crew.goal[0]) * 100; // crew participation rate
+
+            crew.now = [updatedPoint, updatedRate];
+
+            await crew.save();
+        }
+
         await History.findByIdAndDelete(historyId);
 
         return res.send(response(status.SUCCESS, "헌혈 정보를 삭제했습니다."));
     } catch (err) {
+        return res.send(errResponse(status.INTERNAL_SERVER_ERROR));
+    }
+};
+
+/*
+ * API No. 6
+ * API Name : 헌혈 증서 이미지 텍스트 추출
+ * [POST] /history/image
+ */
+export const imageToText = async(req, res, next) => {
+    try {
+        // 이미지 가져오기
+        // const file = req.files;
+
+        // let fileUrl = null;
+        // if (file && file.length != 0) {
+        //     fileUrl = file.map((file) => file.location); // S3에 업로드된 이미지 URL
+        // }
+
+        // console.log("이미지 업로드 url" + fileUrl);
+
+        let fileUrl = 'https://bloodtrail-bucket.s3.ap-northeast-2.amazonaws.com/170715369531167e9f9a1-6290-4646-95d8-132386a3baa7bloodpaper.jpg';
+
+        console.log(fileUrl);
+
+        // 이미지에서 텍스트 추출
+        const client = new ImageAnnotatorClient({
+            keyFileName: process.env.GOOGLE_APPLICATION_CREDENTIALS,
+        });
+
+        const [result] = await client.textDetection(fileUrl);
+        const detections = result.textAnnotations;
+
+        // detections.forEach(text => console.log(text));
+
+        // 성명 정보 추출
+        const nameRegex = /성\s*:\s*([^\n]+)/;
+        const nameMatch = detections[0].description.match(nameRegex);
+        const name = nameMatch ? nameMatch[1].replace(/\s/g, '') : '';
+
+        // 생년월일 정보 추출
+        const birthRegex = /생년월일\s*:\s*([^\n]+)/;
+        const birthMatch = detections[0].description.match(birthRegex);
+        const birth = birthMatch ? birthMatch[1].replace(/\s/g, '') : '';
+
+        // 헌혈 일자 정보 추출
+        const dateRegex = /헌혈일자\s*:\s*([^\n]+)/;
+        const dateMatch = detections[0].description.match(dateRegex);
+        const date = dateMatch ? dateMatch[1].replace(/\s/g, '') : '';
+
+        // 혈액 종류 정보 추출
+        const typeRegex = /혈액종류\s*:\s*([^\n]+)/;
+        const typeMatch = detections[0].description.match(typeRegex);
+        const type = typeMatch ? typeMatch[1].replace(/\s/g, '') : '';
+
+        console.log(name, birth, date, type);
+
+        const info = {
+            name: name,
+            birth: birth,
+            date: date,
+            type: type,
+        };
+        
+        // S3 업로드 된 이미지 삭제
+        // try {
+        //     await deleteImage(fileUrl);
+        //     console.log("이미지 삭제 성공");
+        // } catch (err) {
+        //     return res.send(err);
+        // }
+
+        return res.send(response(status.SUCCESS, info));
+    } catch (err) {
+        console.log(err);
         return res.send(errResponse(status.INTERNAL_SERVER_ERROR));
     }
 };
