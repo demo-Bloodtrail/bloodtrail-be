@@ -297,7 +297,7 @@ export const checkEmail = async(req, res, next) => {
 
     await smtpTransport.sendMail(mailOptions);
 
-    return res.send(response(status.SUCCESS));
+    return res.send(response(status.SUCCESS, code));
   } catch (err) {
     console.log(err);
     return res.send(errResponse(status.INTERNAL_SERVER_ERROR));
@@ -372,7 +372,7 @@ export const validPasswordCheck = (password) => {
 
 // 랜덤 이메일 인증 번호 생성
 export const generateRandomCode = () => {
-  var code = Math.floor(Math.random() * (999999 - 100000 + 1)) + 100000;
+  var code = Math.floor(Math.random() * (999999 - 111111 + 1)) + 111111;
   return code;
 };
 
