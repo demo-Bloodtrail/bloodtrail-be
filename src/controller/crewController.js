@@ -6,6 +6,7 @@ import {
 } from "../config/response.js";
 import User from "../schema/user.js";
 import Crew from "../schema/crew.js";
+import ChatRoom from "../schema/chatRoom.js";
 
 /*
  * API No. 1
@@ -30,6 +31,20 @@ export const createCrew = async(req, res, next) => {
             return res.send(errResponse(status.CREW_ALREADY_JOIN));
         }
 
+        // 채팅방 생성
+        const newChatRoom = new ChatRoom({
+            joiner: _id,
+            type: "crew",
+            title: name,
+        });
+
+        const savedChatRoom = await newChatRoom.save();
+        const io = req.app.get("io"); // io 가져오기
+
+        io.of("/chatRoom").emit("newRoom", savedChatRoom);
+        const chatRoomURI = "/chatRoom/" + savedChatRoom._id;
+
+
         // 크루 생성
         const newCrew = new Crew({
             crew_name: name,
@@ -39,6 +54,7 @@ export const createCrew = async(req, res, next) => {
             goal: [goal_point, goal_rate],
             now: [leader.point, (leader.point / goal_point) * 100],
             description: description,
+            chat: chatRoomURI,
         });
 
         // 크루 리더 크루 정보 추가

@@ -11,6 +11,9 @@ import {
     withdrawCrew,
 } from "../controller/crewController.js";
 import {
+    postChatRoom
+} from "../controller/chatRoomController.js";
+import {
     authenticateUser
 } from "../middleware/authMiddleware.js";
 
