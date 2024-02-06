@@ -40,6 +40,11 @@ const crewSchema = new Schema({
         type: String,
         required: true,
     },
+    // 크루 채팅방
+    chat: {
+        type: String,
+        required: true,
+    },
     created_at: {
         type: Date,
         requried: true,
