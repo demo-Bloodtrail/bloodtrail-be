@@ -18,6 +18,7 @@ import { historyRouter } from "./src/router/historyRouter.js";
 import { crewRouter } from "./src/router/crewRouter.js";
 import { reportRouter } from "./src/router/reportRouter.js";
 import { chatRoomRouter } from "./src/router/chatRoomRouter.js";
+import { noticeRouter } from "./src/router/noticeRouter.js";
 
 dotenv.config(); // .env 파일 사용 (환경 변수 관리)
 
@@ -43,6 +44,7 @@ app.use("/blood", bloodRouter); // blood
 app.use("/history", historyRouter); // history
 app.use("/crew", crewRouter); // crew
 app.use("/chatRoom", chatRoomRouter); // chatRoom
+app.use("/notice", noticeRouter); // notice
 
 app.set("view engine", "ejs"); // 뷰 엔진을 EJS로 설정
 app.use(express.static(path.join(__dirname, "src", "public")));
