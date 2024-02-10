@@ -5,6 +5,7 @@ import {
   customErrResponse,
 } from "../config/response.js";
 import Blood from "../schema/blood.js";
+import User from "../schema/user.js";
 import { deleteImage } from "../middleware/imageMiddleware.js";
 
 /*
@@ -15,6 +16,12 @@ import { deleteImage } from "../middleware/imageMiddleware.js";
 export const postBlood = async (req, res, next) => {
   try {
     const { _id, email } = req.user;
+
+    // 프리미엄 구독하고 있는지 검사 (프리미엄 구독자만 지정헌혈 요청 글 작성 가능)
+    const user = await User.findById(_id);
+    if (user.premium.payment == false) {
+      return res.send(errResponse(status.BLOOD_NOT_PREMIUM));
+    }
 
     const {
       title,

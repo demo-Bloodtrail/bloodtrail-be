@@ -55,8 +55,21 @@ const userSchema = new Schema(
     },
     // 프리미엄 결제 여부
     premium: {
-      type: Boolean,
-      required: true,
+      payment: {
+        type: Boolean,
+        default: false,
+        required: true,
+      },
+      merchant_uid: {
+        type: String,
+      },
+      imp_uid: {
+        type: String,
+      },
+      updated_at: {
+        type: Date,
+        default: Date.now,
+      },
     },
     // 소속 크루
     crew: {

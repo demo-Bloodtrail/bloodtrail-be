@@ -85,7 +85,20 @@ export const getChatRooms = async (req, res, next) => {
       );
     }
 
-    return res.send(response(status.SUCCESS, { chatRooms }));
+    const chatRoomsWithChat = [];
+
+    // 채팅방 별 가장 최근 메시지 or 이미지 찾기
+    for (const chatRoom of chatRooms) {
+      const recentChat = await Chat.findOne({ chatRoom: chatRoom._id })
+        .sort({ created_at: -1 })
+        .select("message image");
+
+      chatRoomsWithChat.push({
+        chatRoom: chatRoom.toObject(),
+        recentChat: recentChat ? recentChat.message || recentChat.image : null,
+      });
+    }
+    return res.send(response(status.SUCCESS, { chatRoomsWithChat }));
   } catch (err) {
     console.log(err);
     return res.send(errResponse(status.INTERNAL_SERVER_ERROR));
