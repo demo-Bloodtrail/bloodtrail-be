@@ -40,7 +40,7 @@ export const postReport = async (req, res, next) => {
 
         const saveNewReport = new Report(temp);
         await saveNewReport.save();
-
+        req.body.newReport = saveNewReport;
         req.body.target_user = temp.target_user;
         checkStatus(req, res, next);
     } catch ( error ) {
@@ -71,7 +71,7 @@ export const checkStatus = async (req, res, next) => {
             await User.findByIdAndUpdate({ _id: targetUser }, { status: "inactive" }, { new: true });
         }
 
-        return res.send(response(status.SUCCESS));
+        return res.send(response(status.SUCCESS, req.body.newReport));
     } catch ( error ) {
         return res.send(errResponse(status.INTERNAL_SERVER_ERROR));
     }

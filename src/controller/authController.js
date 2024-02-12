@@ -1,3 +1,5 @@
+import dotenv from "dotenv";
+import axios from "axios";
 import bcrypt from "bcrypt";
 import { status } from "../config/responseStatus.js";
 import {
@@ -12,6 +14,11 @@ import {
   removeRefreshToken,
 } from "../middleware/jwtMiddleware.js";
 import { deleteImage } from "../middleware/imageMiddleware.js";
+import { smtpTransport } from "../config/email.js";
+import { CostExplorer } from "aws-sdk";
+import { access } from "fs";
+
+dotenv.config(); // .env 파일 사용 (환경 변수 관리)
 
 /*
  * API No. 1
@@ -80,7 +87,6 @@ export const registUser = async (req, res, next) => {
       phone,
       birth,
       password: hashedPassword,
-      premium: false,
     });
 
     const savedUser = await newUser.save();
@@ -105,6 +111,16 @@ export const login = async (req, res, next) => {
     const user = await User.findOne({ email });
     if (!user || !bcrypt.compareSync(password, user.password)) {
       return res.send(errResponse(status.MEMBER_NOT_FOUND));
+    }
+
+    // 휴면 계정 or 5번 이상 신고 당한 계정
+    if (user.status === "inactive") {
+      return res.send(
+        customErrResponse(
+          status.BAD_REQUEST,
+          "로그인할 수 없습니다. 서버에 문의해주세요."
+        )
+      );
     }
 
     const accessToken = generateAccessToken(user);
@@ -201,7 +217,7 @@ export const getUserInfo = async (req, res, next) => {
  */
 export const updateUserInfo = async (req, res, next) => {
   const { _id, email } = req.user;
-  const { nickname, phone, profile_image, password } = req.body;
+  const { nickname, phone, password } = req.body;
   const fileUrl =
     req.file && req.file.location
       ? req.file.location
@@ -229,6 +245,8 @@ export const updateUserInfo = async (req, res, next) => {
     }
 
     // password 수정 시, password 유효성 검사 & 암호화
+    let hashedPassword;
+
     if (password) {
       if (validPasswordCheck(password) == false) {
         return res.send(
@@ -238,14 +256,20 @@ export const updateUserInfo = async (req, res, next) => {
           )
         );
       }
-      const hashedPassword = await bcrypt.hash(password, 10);
+      hashedPassword = await bcrypt.hash(password, 10);
     }
 
     // S3 업로드 된 이미지 삭제
     const findUser = await User.findOne({ email });
-    const fileKey = findUser.profile_image;
-    await deleteImage(fileKey);
-    console.log("이미지 삭제 성공");
+
+    if (
+      findUser.profile_image &&
+      findUser.profile_image !== "파일을 업로드하지 않았습니다."
+    ) {
+      const fileKey = findUser.profile_image;
+      await deleteImage(fileKey);
+      console.log("이미지 삭제 성공");
+    }
 
     const updateUser = await User.findOneAndUpdate(
       { email: email },
@@ -254,7 +278,7 @@ export const updateUserInfo = async (req, res, next) => {
           nickname: nickname,
           phone: phone,
           profile_image: fileUrl,
-          password: password,
+          password: hashedPassword,
         },
       },
       { new: true }
@@ -263,6 +287,163 @@ export const updateUserInfo = async (req, res, next) => {
     return res.send(response(status.SUCCESS, updateUser));
   } catch (error) {
     console.log(error);
+    return res.send(errResponse(status.INTERNAL_SERVER_ERROR));
+  }
+};
+
+/*
+ * API No. 8
+ * API Name : 이메일 인증 API
+ * [POST] /auth/check-email
+ */
+export const checkEmail = async (req, res, next) => {
+  const { email } = req.body;
+  const code = generateRandomCode();
+
+  try {
+    // 이메일 유효성 검사
+    if (validEmailCheck(email) == false) {
+      return res.send(
+        customErrResponse(
+          status.BAD_REQUEST,
+          "올바른 이메일 주소를 입력해주세요."
+        )
+      );
+    }
+
+    const mailOptions = {
+      from: process.env.NODE_MAILER_ID,
+      to: email,
+      subject: "[Blood Trail] 이메일 인증 번호",
+      html: "<h1>인증번호를 입력해주세요</h1><br>" + code,
+    };
+
+    await smtpTransport.sendMail(mailOptions);
+
+    return res.send(response(status.SUCCESS, code));
+  } catch (err) {
+    console.log(err);
+    return res.send(errResponse(status.INTERNAL_SERVER_ERROR));
+  }
+};
+
+/*
+ * API No. 9
+ * API Name : 비밀번호 찾기 API
+ * [PATCH] /auth/find-password
+ */
+export const findPassword = async (req, res, next) => {
+  const { email } = req.body;
+
+  try {
+    // 이메일에 해당하는 사용자 검색
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      return res.send(errResponse(status.MEMBER_NOT_FOUND));
+    }
+
+    // 새로운 비밀번호 생성
+    const newPassword = generateRandomPassword();
+
+    // 비밀번호 암호화
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    // 사용자 정보 수정
+    user.password = hashedPassword;
+    await user.save();
+
+    // 새로운 비밀번호 전송
+    const mailOptions = {
+      from: process.env.NODE_MAILER_ID,
+      to: email,
+      subject: "[Blood Trail] 비밀번호 찾기",
+      html:
+        `<h1>새로운 비밀번호 안내</h1><p>새로운 비밀번호는 ${newPassword} 입니다.</p>` +
+        `<p>로그인 후 비밀번호를 변경해주세요.</p>`,
+    };
+
+    await smtpTransport.sendMail(mailOptions);
+
+    return res.send(response(status.SUCCESS));
+  } catch (err) {
+    console.log(err);
+    return res.send(errResponse(status.INTERNAL_SERVER_ERROR));
+  }
+};
+
+/*
+ * API No. 10
+ * API Name : 프리미엄 구독 API (클라이언트에서 iamport와 결제 완료 시 호출되는 서버 결제완료 처리 서비스)
+ * [POST] /auth/premium
+ */
+export const subscribePremium = async (req, res, next) => {
+  /*
+    imp_uid = 포트원 결제 고유 번호
+    merchant_uid = 가맹점 주문번호 (고유한 값)
+  */
+  const { imp_uid, merchant_uid } = req.body;
+  const { _id, email } = req.user;
+
+  try {
+    // 1. 액세스 토큰 발급 받기
+    const getToken = await axios({
+      url: "https://api.iamport.kr/users/getToken",
+      method: "post", // POST method
+      headers: { "Content-Type": "application/json" },
+      data: {
+        imp_key: process.env.IMP_KEY, // REST API 키
+        imp_secret: process.env.IMP_SECRET, // REST API Secret
+      },
+    });
+
+    // 2. imp_uid로 포트원 서버에서 결제 정보 조회
+    const getPaymentData = await axios.get(
+      `https://api.iamport.kr/payments/${imp_uid}`,
+      {
+        headers: {
+          Authorization: getToken.data.response.access_token,
+        },
+      }
+    );
+
+    // 결제 검증
+    const amount = getPaymentData.data.response.amount;
+    const status = getPaymentData.data.response.status;
+
+    console.log("amount: " + amount + " status: " + status);
+    // 가상계좌 결제 지원 X + ONLY 카드 결제만 지원!!!
+    // 결제된 금액과 결제 되어야 하는 금액이 일치하는지 검증
+    if (amount != 100 || status != "paid") {
+      return res.send(
+        customErrResponse(
+          status.BAD_REQUEST,
+          "forgery, 위조된 결제 시도입니다."
+        )
+      );
+    }
+  } catch (err) {
+    console.log(err);
+    return res.send(errResponse(status.INTERNAL_SERVER_ERROR));
+  }
+
+  try {
+    const updatedUser = await User.findByIdAndUpdate(
+      { _id: _id },
+      {
+        $set: {
+          "premium.payment": true,
+          "premium.merchant_uid": merchant_uid,
+          "premium.imp_uid": imp_uid,
+          "premium.updated_at": new Date(),
+        },
+      },
+      { new: true }
+    );
+    console.log("updatedUser: " + updatedUser);
+    return res.send(response(status.SUCCESS, "일반 결제 성공"));
+  } catch (err) {
+    console.log(err);
     return res.send(errResponse(status.INTERNAL_SERVER_ERROR));
   }
 };
@@ -287,4 +468,37 @@ export const validCallNumberCheck = (phone) => {
 export const validPasswordCheck = (password) => {
   const pattern = /^(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{6,20}$/;
   return pattern.test(password);
+};
+
+// 랜덤 이메일 인증 번호 생성
+export const generateRandomCode = () => {
+  var code = Math.floor(Math.random() * (999999 - 111111 + 1)) + 111111;
+  return code;
+};
+
+// 랜덤 패스워드 생성
+export const generateRandomPassword = () => {
+  const charset =
+    "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ123456789";
+
+  let password = "";
+
+  password += getRandomChar("0123456789");
+  password += getRandomChar("abcdefghijklmnopqrstuvwxyz");
+  password += getRandomChar("ABCDEFGHIJKLMNOPQRSTUVWXYZ");
+
+  const remainLength = Math.floor(Math.random() * (20 - password.length)) + 6;
+
+  for (let i = 0; i < remainLength; i++) {
+    const index = Math.floor(Math.random() * charset.length);
+    password += charset[index];
+  }
+
+  return password;
+};
+
+// 랜덤 문자열 선택
+export const getRandomChar = (charset) => {
+  const index = Math.floor(Math.random() * charset.length);
+  return charset[index];
 };

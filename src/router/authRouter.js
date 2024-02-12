@@ -7,6 +7,9 @@ import {
   logout,
   withdrawUser,
   updateUserInfo,
+  checkEmail,
+  findPassword,
+  subscribePremium,
 } from "../controller/authController";
 import {
   authenticateUser,
@@ -28,3 +31,9 @@ authRouter.patch(
   uploadOne.single("file"),
   updateUserInfo
 );
+authRouter.post("/check-email", checkEmail); // 이메일 인증
+authRouter.patch("/find-password", findPassword); // 비밀번호 찾기
+authRouter.post("/premium", authenticateUser, subscribePremium); // 프리미엄 구독
+authRouter.get("/payment", function (req, res) {
+  res.render("payment");
+});

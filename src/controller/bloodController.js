@@ -5,6 +5,7 @@ import {
   customErrResponse,
 } from "../config/response.js";
 import Blood from "../schema/blood.js";
+import User from "../schema/user.js";
 import { deleteImage } from "../middleware/imageMiddleware.js";
 
 /*
@@ -15,6 +16,12 @@ import { deleteImage } from "../middleware/imageMiddleware.js";
 export const postBlood = async (req, res, next) => {
   try {
     const { _id, email } = req.user;
+
+    // 프리미엄 구독하고 있는지 검사 (프리미엄 구독자만 지정헌혈 요청 글 작성 가능)
+    const user = await User.findById(_id);
+    if (user.premium.payment == false) {
+      return res.send(errResponse(status.BLOOD_NOT_PREMIUM));
+    }
 
     const {
       title,
@@ -151,7 +158,7 @@ export const patchBlood = async (req, res, next) => {
 /*
  * API No. 3
  * API Name : 지정헌혈글 전체 조회 API (9개씩 페이징 처리)
- * [GET] /blood/:page?type=type&product=product&filter=filter
+ * [GET] /blood/:page/all?type=type&product=product&filter=filter
  */
 export const getAllBloods = async (req, res, next) => {
   console.log("지정헌혈글 전체 조회 API 요청");

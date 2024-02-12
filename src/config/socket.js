@@ -30,7 +30,7 @@ export default function socketConnect(server, app) {
       socket.join(chatRoomId); // 해당 소켓을 /chatRoom에 넣어주기 (소켓 분리)
       socket.to(chatRoomId).emit("join", {
         writer: {
-          id: "65bcebea6f30de27fc4f39fc", // TO DO : 배포 DB에 맞게 수정 필요
+          id: "65bf95b83498e7225dead39d",
           nickname: "system",
         }, // 유저는 나 / 상대방 / 시스템으로 3가지 (시스템 = 알림 역할)
         message: `${nickname}님이 입장하셨습니다.`,
@@ -53,7 +53,7 @@ export default function socketConnect(server, app) {
       } else {
         socket.to(chatRoomId).emit("exit", {
           writer: {
-            id: "65bcebea6f30de27fc4f39fc", // TO DO : 배포 DB에 맞게 수정 필요
+            id: "65bf95b83498e7225dead39d", // TO DO : 배포 DB에 맞게 수정 필요
             nickname: "system",
           }, // 유저는 나 / 상대방 / 시스템으로 3가지 (시스템 = 알림 역할)
           message: `${nickname}님이 퇴장하셨습니다.`,
