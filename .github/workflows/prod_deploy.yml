@@ -52,9 +52,9 @@ jobs:
       #     echo "REDIS_PORT=${{ secrets.REDIS_PORT }}" >> .env
 
       # Google Cloud Vision Key 파일 생성
-      - name: Create Google Cloud Vision json file
-        run: |
-          echo "${{ secrets.GOOGLE_CLOUD_VISION_KEY }}" >> blood-trail-ocr-29f591ad58c9.json
+      # - name: Create Google Cloud Vision json file
+      #   run: |
+      #     echo "${{ secrets.GOOGLE_CLOUD_VISION_KEY }}" >> blood-trail-ocr-29f591ad58c9.json
 
       # 배포 패키지 생성
       - name: Generate deployment package
@@ -64,7 +64,7 @@ jobs:
           cp package-lock.json dist/package-lock.json
           cp Procfile dist/Procfile
           cp -R .ebextensions dist/.ebextensions
-          cp blood-trail-ocr-29f591ad58c9.json dist/blood-trail-ocr-29f591ad58c9.json
+      #    cp blood-trail-ocr-29f591ad58c9.json dist/blood-trail-ocr-29f591ad58c9.json
           cd dist
           zip -r deploy.zip .
 
