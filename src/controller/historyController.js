@@ -268,26 +268,25 @@ export const deleteHistory = async(req, res, next) => {
 export const imageToText = async(req, res, next) => {
     try {
         // 이미지 가져오기
-        // const file = req.files;
+        const file = req.files;
 
-        // let fileUrl = null;
-        // if (file && file.length != 0) {
-        //     fileUrl = file.map((file) => file.location); // S3에 업로드된 이미지 URL
-        // }
-
-        // console.log("이미지 업로드 url" + fileUrl);
-
-        let fileUrl = 'https://bloodtrail-bucket.s3.ap-northeast-2.amazonaws.com/170715369531167e9f9a1-6290-4646-95d8-132386a3baa7bloodpaper.jpg';
-
-        console.log(fileUrl);
+        let fileUrl = null;
+        if (file && file.length != 0) {
+            fileUrl = file.map((file) => file.location); // S3에 업로드된 이미지 URL
+            console.log("이미지 업로드 url : " + fileUrl);
+        }
 
         // 이미지에서 텍스트 추출
         const client = new ImageAnnotatorClient({
             keyFileName: process.env.GOOGLE_APPLICATION_CREDENTIALS,
         });
 
-        const [result] = await client.textDetection(fileUrl);
+        // console.log(fileUrl);
+        
+        const [result] = await client.textDetection(fileUrl[0]);
         const detections = result.textAnnotations;
+
+        console.log("이미지 텍스트 변환 완료");
 
         // detections.forEach(text => console.log(text));
 
@@ -321,12 +320,12 @@ export const imageToText = async(req, res, next) => {
         };
         
         // S3 업로드 된 이미지 삭제
-        // try {
-        //     await deleteImage(fileUrl);
-        //     console.log("이미지 삭제 성공");
-        // } catch (err) {
-        //     return res.send(err);
-        // }
+        try {
+            await deleteImage(fileUrl[0]);
+            console.log("이미지 삭제 성공");
+        } catch (err) {
+            return res.send(err);
+        }
 
         return res.send(response(status.SUCCESS, info));
     } catch (err) {
