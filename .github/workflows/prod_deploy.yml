@@ -1,4 +1,4 @@
-name: Node.js Dev CI/CD
+name: Node.js Prod CI/CD
 
 on:
   pull_request: # pull request -> merge 가 되었을 때 Github Action 실행!
@@ -64,7 +64,6 @@ jobs:
           cp package-lock.json dist/package-lock.json
           cp Procfile dist/Procfile
           cp -R .ebextensions dist/.ebextensions
-      #    cp blood-trail-ocr-29f591ad58c9.json dist/blood-trail-ocr-29f591ad58c9.json
           cd dist
           zip -r deploy.zip .
 
