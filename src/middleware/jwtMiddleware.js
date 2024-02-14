@@ -47,6 +47,7 @@ export const generateRefreshToken = (user) => {
     algorithm: "HS256", // 암호화 알고리즘
     expiresIn: "14d", // 유효기간 = 14일
   });
+  redisClient.connect(); // redis 연결
   redisClient.set(user._id.toString(), refreshToken); // <사용자 ID, refreshToken>을 redis에 저장
   return refreshToken;
 };
@@ -54,6 +55,7 @@ export const generateRefreshToken = (user) => {
 // refresh token 검증
 export const verifyRefreshToken = async (token, userId, res) => {
   try {
+    redisClient.connect();
     const refreshToken = await redisClient.get(userId);
 
     if (token !== refreshToken)
@@ -78,6 +80,7 @@ export const verifyRefreshToken = async (token, userId, res) => {
 // refresh token 삭제
 export const removeRefreshToken = (user) => {
   return new Promise((resolve, reject) => {
+    redisClient.connect();
     const result = redisClient.del(user._id.toString());
     resolve(result);
   });
