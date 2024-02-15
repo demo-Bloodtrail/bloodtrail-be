@@ -57,11 +57,11 @@ export const createCrew = async(req, res, next) => {
             chat: chatRoomURI,
         });
 
+        const result = await newCrew.save();
+
         // 크루 리더 크루 정보 추가
         leader.crew = newCrew._id;
         await leader.save();
-
-        const result = await newCrew.save();
 
         return res.send(response(status.SUCCESS, result));
     } catch(err) {
