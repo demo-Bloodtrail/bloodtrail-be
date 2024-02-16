@@ -6,7 +6,6 @@ import {
     updateHistory,
     deleteHistory,
     imageToText,
-    getAvailableDate,
 } from "../controller/historyController.js";
 import { authenticateUser } from "../middleware/authMiddleware.js";
 import { uploadSome } from "../middleware/imageMiddleware.js";
