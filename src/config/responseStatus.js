@@ -107,6 +107,12 @@ export const status = {
     code: "HISTORY4001",
     message: "해당 헌혈 정보를 찾을 수 없습니다.",
   },
+  IMAGE_NOT_READ: {
+    status: StatusCodes.BAD_REQUEST,
+    isSuccess: false,
+    code: "HISTORY4002",
+    message: "해당 이미지 인식에 실패했습니다."
+  },
 
   // crew err
   CREW_ALREADY_JOIN: {

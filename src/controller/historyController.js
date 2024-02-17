@@ -1,3 +1,4 @@
+import dotenv from "dotenv";
 import { status } from "../config/responseStatus.js";
 import {
   response,
@@ -9,6 +10,9 @@ import History from "../schema/history.js";
 import Crew from "../schema/crew.js";
 import { ImageAnnotatorClient } from "@google-cloud/vision";
 import { deleteImage } from "../middleware/imageMiddleware.js";
+import AWS from "aws-sdk";
+
+dotenv.config();
 
 /*
  * API No. 1
@@ -276,19 +280,38 @@ export const imageToText = async(req, res, next) => {
             console.log("이미지 업로드 url : " + fileUrl);
         }
 
+        // S3 버킷에서 JSON 파일 가져오기
+        const s3 = new AWS.S3();
+        const params = {
+            Bucket: process.env.S3_BUCKET,
+            Key: process.env.CLIENT_KEY_NAME
+        };
+
+        const jsonFile = await s3.getObject(params).promise();
+
+        const credentials = JSON.parse(jsonFile.Body.toString());
+
         // 이미지에서 텍스트 추출
         const client = new ImageAnnotatorClient({
-            keyFileName: process.env.GOOGLE_APPLICATION_CREDENTIALS,
+            credentials: {
+                client_email: credentials.client_email,
+                private_key: credentials.private_key,
+            }
         });
-
-        // console.log(fileUrl);
         
         const [result] = await client.textDetection(fileUrl[0]);
         const detections = result.textAnnotations;
 
+        console.log(result);
+        console.log(detections);
+
         console.log("이미지 텍스트 변환 완료");
 
         // detections.forEach(text => console.log(text));
+
+        if (!detections[0].description) {
+            return res.send(errResponse(status.IMAGE_NOT_READ));
+        }
 
         // 성명 정보 추출
         const nameRegex = /성\s*:\s*([^\n]+)/;
