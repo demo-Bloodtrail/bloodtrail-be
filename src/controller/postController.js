@@ -79,7 +79,6 @@ export const viewPost = async (req, res, next) => {
     try {
         const { _id, email } = req.user;
         const postId = req.params.id;
-        // const post = await Post.findOneAndUpdate({ _id: postId }, { $inc: { watch_count: +1 } }, { new: true });
         const post = await Post.findById({ _id: postId });
 
         if (!viewObj[postId]) viewObj[postId] = []; // 리스트를 생성
@@ -95,7 +94,6 @@ export const viewPost = async (req, res, next) => {
         for (let i in viewObj) {
             if (i.length == 0) delete viewObj.i;
         }
-
 
         if (post.like_users.includes(_id)) { // 이미 좋아요를 누른 사람인 경우
             let userLiked = true;
