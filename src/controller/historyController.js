@@ -111,6 +111,7 @@ export const getAllHistories = async(req, res, next) => {
 
         return res.send(response(status.SUCCESS, result));
     } catch (err) {
+        console.log(err);
         return res.send(errResponse(status.INTERNAL_SERVER_ERROR));
     }
 };
@@ -136,6 +137,7 @@ export const getHistory = async(req, res, next) => {
 
         return res.send(response(status.SUCCESS, history));
     } catch (err) {
+        console.log(err);
         return res.send(errResponse(status.INTERNAL_SERVER_ERROR));
     }
 };
@@ -204,6 +206,7 @@ export const updateHistory = async(req, res, next) => {
 
         return res.send(response(status.SUCCESS, updatedHistory));
     } catch (err) {
+        console.log(err);
         return res.send(errResponse(status.INTERNAL_SERVER_ERROR));
     }
 };
@@ -260,6 +263,7 @@ export const deleteHistory = async(req, res, next) => {
 
         return res.send(response(status.SUCCESS, "헌혈 정보를 삭제했습니다."));
     } catch (err) {
+        console.log(err);
         return res.send(errResponse(status.INTERNAL_SERVER_ERROR));
     }
 };
@@ -351,6 +355,38 @@ export const imageToText = async(req, res, next) => {
         }
 
         return res.send(response(status.SUCCESS, info));
+    } catch (err) {
+        console.log(err);
+        return res.send(errResponse(status.INTERNAL_SERVER_ERROR));
+    }
+};
+
+/*
+ * API No. 7
+ * API Name : 전혈 가능 날짜 조회
+ * [GET] /history/date
+ */
+export const getAvailableDate = async(req, res, next) => {
+    const { _id, email } = req.user;
+    
+    try {
+        // 최신 헌혈 정보 조회
+        const lastDonation = await History.findOne({ user: _id, type: 'WB' }).sort({ created_at: -1 });
+
+        if (!lastDonation) {
+            return res.send(errResponse(status.HISTORY_NOT_FOUND));
+        }
+
+        // 전혈 헌혈 가능 날짜 계산
+        const nextDonation = new Date(lastDonation.created_at);
+        nextDonation.setDate(nextDonation.getDate() + 56);
+
+        // 디데이로 표시
+        const today = new Date();
+        const timeDifference = nextDonation - today;
+        const d_day = Math.ceil(timeDifference / (1000 * 60 * 60 * 24));
+
+        return res.send(response(status.SUCCESS, d_day));
     } catch (err) {
         console.log(err);
         return res.send(errResponse(status.INTERNAL_SERVER_ERROR));

@@ -45,24 +45,27 @@ export const getGalleryPosting = async (req, res, next) => {
     try {
         const posttype = req.query.posttype; // [FREE, HONOR, INFO, CERTIFY]
         const sorttype = req.query.sorttype; // [created_at, likes]
-
         const bestPost = await Post.find({ types: posttype, likes: { $gte: 10 }, status: true }, {
             writer: true, title: true, image: true, content: true, created_at: true })
         .sort({ likes: -1 }).limit(3); // 공감이 10개 이상인 게시글 중 상위 3개를 선택
+        
+        const postCount = await Post.countDocuments({ types: posttype, status: true });
+        let totalPage = Math.ceil(postCount / perPage); // 페이지 추가
+
 
         if (sorttype === 'created_at') { // 최신순 정렬
             const post = await Post.find({ types: posttype, status: true }, {
                 writer: true, title: true, image: true, content: true, created_at: true
             }).sort({ created_at: -1 }).skip((page - 1) * perPage).limit(perPage); // sorttype 
             const Page = [bestPost, post];
-            return res.send(response(status.SUCCESS, Page));
+            return res.send(response(status.SUCCESS, { totalPage, Page }));
         }
         else { // 공감순 정렬
             const post = await Post.find({ types: posttype, status: true }, {
                 writer: true, title: true, image: true, content: true, created_at: true
             }).sort({ likes: -1 }).skip((page - 1) * perPage).limit(perPage); // sorttype 
             const Page = [bestPost, post];
-            return res.send(response(status.SUCCESS, Page));
+            return res.send(response(status.SUCCESS, { totalPage, Page }));
         }
     } catch ( error ) {
         return res.send(errResponse(status.INTERNAL_SERVER_ERROR));
@@ -72,9 +75,19 @@ export const getGalleryPosting = async (req, res, next) => {
 // 게시글 상세조회와 게시글 조회수 증가, 해당 게시글에 작성된 댓글도 같이 가져오기
 export const viewPost = async (req, res, next) => {
     try {
+        const { _id, email } = req.user;
         const postId = req.params.id;
         const post = await Post.findOneAndUpdate({ _id: postId }, { $inc: { watch_count: +1 } }, { new: true });
-        return res.send(response(status.SUCCESS, post));
+        let userLiked
+
+        if (post.like_users.includes(_id)) { // 이미 좋아요를 누른 사람인 경우
+            let userLiked = true;
+            return res.send(response(status.SUCCESS, { userLiked, post }));
+        }
+        else {
+            let userLiked = false;
+            return res.send(response(status.SUCCESS, {userLiked, post }));
+        }
     } catch ( error ) {
         return res.send(errResponse(status.INTERNAL_SERVER_ERROR));
     }
