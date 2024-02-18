@@ -4,6 +4,8 @@ import { status } from "../config/responseStatus.js";
 import { customErrResponse, errResponse, response } from '../config/response.js';
 import { deleteImage } from '../middleware/imageMiddleware.js';
 
+const viewObj = new Object();
+
 
 // 줄글 형식으로 게시글을 확인하기
 export const getLinePosting = async (req, res, next) => {
@@ -77,8 +79,23 @@ export const viewPost = async (req, res, next) => {
     try {
         const { _id, email } = req.user;
         const postId = req.params.id;
-        const post = await Post.findOneAndUpdate({ _id: postId }, { $inc: { watch_count: +1 } }, { new: true });
-        let userLiked
+        // const post = await Post.findOneAndUpdate({ _id: postId }, { $inc: { watch_count: +1 } }, { new: true });
+        const post = await Post.findById({ _id: postId });
+
+        if (!viewObj[postId]) viewObj[postId] = []; // 리스트를 생성
+        if (viewObj[postId].indexOf(_id) == -1) {
+            viewObj[postId].push(_id);
+            post.watch_count++;
+            await post.save();
+            setTimeout(() => {
+                viewObj[postId].splice(viewObj[postId].indexOf(_id), 1)
+            }, 600000);
+        }
+
+        for (let i in viewObj) {
+            if (i.length == 0) delete viewObj.i;
+        }
+
 
         if (post.like_users.includes(_id)) { // 이미 좋아요를 누른 사람인 경우
             let userLiked = true;
@@ -86,7 +103,7 @@ export const viewPost = async (req, res, next) => {
         }
         else {
             let userLiked = false;
-            return res.send(response(status.SUCCESS, {userLiked, post }));
+            return res.send(response(status.SUCCESS, { userLiked, post }));
         }
     } catch ( error ) {
         return res.send(errResponse(status.INTERNAL_SERVER_ERROR));
