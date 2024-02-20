@@ -8,6 +8,8 @@ import Blood from "../schema/blood.js";
 import User from "../schema/user.js";
 import { deleteImage } from "../middleware/imageMiddleware.js";
 
+const viewObj = new Object();
+
 /*
  * API No. 1
  * API Name : 지정헌혈글 작성 API
@@ -235,21 +237,33 @@ export const getBlood = async (req, res, next) => {
   const { _id, email } = req.user;
 
   try {
-    const blood = await Blood.findOneAndUpdate(
-      { _id: bloodId },
-      { $inc: { views: 1 } }, // 조회수 1 증가
-      { new: true } // 업데이트 후의 blood를 반환하도록 설정
-    ).populate({
-      path: "writer",
-      select: ["nickname", "profile_image"],
-    });
+    const blood = await Blood.findById(bloodId);
 
     if (!blood) {
       return res.send(errResponse(status.BLOOD_NOT_FOUND));
     }
 
+    if (!viewObj[bloodId]) viewObj[bloodId] = []; // 리스트를 생성
+    if (viewObj[bloodId].indexOf(_id) == -1) {
+      viewObj[bloodId].push(_id);
+      blood.views++;
+      await blood.save();
+      setTimeout(() => {
+        viewObj[bloodId].splice(viewObj[bloodId].indexOf(_id), 1);
+      }, 600000);
+    }
+
+    for (let i in viewObj) {
+      if (i.length == 0) delete viewObj.i;
+    }
+
+    await blood.populate({
+      path: "writer",
+      select: ["nickname", "profile_image"],
+    });
+
     // 좋아요 눌렀는지 여부 검사
-    const alreadyLiked = blood.likes.some((_id) => _id.equals(_id));
+    const alreadyLiked = blood.likes.includes(_id);
     return res.send(response(status.SUCCESS, { blood, isLiked: alreadyLiked }));
   } catch (err) {
     console.log(err);
