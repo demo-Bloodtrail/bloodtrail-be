@@ -10,6 +10,7 @@ import {
   checkEmail,
   findPassword,
   subscribePremium,
+  getRank,
 } from "../controller/authController";
 import {
   authenticateUser,
@@ -37,3 +38,4 @@ authRouter.post("/premium", authenticateUser, subscribePremium); // 프리미엄
 authRouter.get("/payment", function (req, res) {
   res.render("payment");
 });
+authRouter.get("/rank", getRank); // 헌혈 랭킹 조회
