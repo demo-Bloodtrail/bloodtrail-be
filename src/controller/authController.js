@@ -448,26 +448,6 @@ export const subscribePremium = async (req, res, next) => {
   }
 };
 
-/*
- * API No. 11
- * API Name : 개인 포인트 순위 조회
- * [GET] /auth/rank
- */
-export const getUserRank = async(req, res, next) => {
-  try {
-    const users = await User.find().sort({ point: -1 }).limit(3);
-
-    if (users.length === 0) {
-      return res.send(errResponse(status.MEMBER_NOT_FOUND));
-    }
-
-    return res.send(response(status.SUCCESS, users));
-  } catch (err) {
-    console.log(err);
-    return res.send(errResponse(status.INTERNAL_SERVER_ERROR));
-  }
-};
-
 /*************************************************************************************/
 // 이메일 유효성 검사
 export const validEmailCheck = (email) => {
