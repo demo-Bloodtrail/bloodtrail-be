@@ -448,6 +448,29 @@ export const subscribePremium = async (req, res, next) => {
   }
 };
 
+/*
+ * API No. 11
+ * API Name : 헌혈 랭킹 조회
+ * [GET] /auth/rank
+ */
+export const getRank = async(req, res, next) => {
+  try {
+    const rankedUser = await User.find()
+      .sort({ point: -1 })
+      .limit(3)
+      .select('name profile_image point');
+
+    if (rankedUser.length === 0) {
+      return res.send(errResponse(status.MEMBER_NOT_FOUND));
+    }
+
+    return res.send(response(status.SUCCESS, rankedUser));
+  } catch (err) {
+    console.log(err);
+    return res.send(errResponse(status.INTERNAL_SERVER_ERROR));
+  }
+};
+
 /*************************************************************************************/
 // 이메일 유효성 검사
 export const validEmailCheck = (email) => {
