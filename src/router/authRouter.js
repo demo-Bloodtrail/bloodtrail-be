@@ -10,6 +10,7 @@ import {
   checkEmail,
   findPassword,
   subscribePremium,
+  getUserRank,
 } from "../controller/authController";
 import {
   authenticateUser,
@@ -37,3 +38,4 @@ authRouter.post("/premium", authenticateUser, subscribePremium); // 프리미엄
 authRouter.get("/payment", function (req, res) {
   res.render("payment");
 });
+authRouter.get("/rank", getUserRank); // 개인 포인트 순위 조회
